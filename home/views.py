@@ -21,3 +21,9 @@ def tables(request):
     'segment': 'tables'
   }
   return render(request, "pages/dynamic-tables.html", context)
+
+def exit_enter_strategies(request):
+  context = {
+    'segment': 'exit_enter_strategies'
+  }
+  return render(request, "pages/exit-enter-strategies.html", context)
