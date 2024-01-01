@@ -54,7 +54,7 @@ if __name__ == "__main__":
     for x in range(200):
             sleep(2)
             for symbol in symbols:
-                ohlcv = exchange.fetch_ohlcv(symbol, "5m", 100)
+                ohlcv = exchange.fetch_ohlcv(symbol, "5m")
             
                 df = pu.create_data_frame(ohlcv)
                 # Instantiate the BollingerBandsStrategy class
