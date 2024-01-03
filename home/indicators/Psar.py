@@ -1,7 +1,7 @@
 import pandas as pd
 import pandas_ta as ta
-from ExchangeConnector import ExchangeConnector
-from PandasUtil import PandasUtil as pu
+from home.ExchangeConnector import ExchangeConnector
+from home.PandasUtil import PandasUtil as pu;
 from time import sleep
 from datetime import datetime
 import os

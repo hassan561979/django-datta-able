@@ -1,17 +1,16 @@
 import pandas as pd
 import pandas_ta as ta
-from ExchangeConnector import ExchangeConnector
-from PandasUtil import PandasUtil as pu;
+from home.ExchangeConnector import ExchangeConnector
+from home.PandasUtil import PandasUtil as pu;
 from time import sleep
 from datetime import datetime
 import os
 
 class BollingerBands:
-    def __init__(self, data, window=20, num_std_dev=2.0):
+    def __init__(self, data, window=10, num_std_dev=2.0):
         self.data = data
         self.window = window
         self.num_std_dev = num_std_dev
-        self.signal=0
         self.generate_signals()
 
     def generate_signals(self):
@@ -25,12 +24,17 @@ class BollingerBands:
         bb_lower =self.data['bb_lower'].iloc[-1]
 
         if closed_price > bb_upper:
-            self.signal=-1
+            signal=-1
         elif closed_price < bb_lower:
-            self.signal=1
+            signal=1
+        else:
+            signal=0
+        
+        self.signals = {'close':closed_price,'bb_upper':bb_upper,'bb_lower':bb_lower,'signal':signal}
 
+            
     def get_signals(self):
-        return self.signal
+        return self.signals
 # Example usage:
 if __name__ == "__main__":
     exchange = ExchangeConnector("binance")
@@ -46,14 +50,14 @@ if __name__ == "__main__":
     for x in range(200):
             sleep(2)
             for symbol in symbols:
-                ohlcv = exchange.fetch_ohlcv(symbol, "1m", 100)
+                ohlcv = exchange.fetch_ohlcv(symbol, "5m")
             
                 df = pu.create_data_frame(ohlcv)
                 # Instantiate the BollingerBandsStrategy class
-                bb = BollingerBands(df,10)
+                bb = BollingerBands(df)
 
                 # Get the signals DataFrame
                 signals = bb.get_signals()
-                if signals ==-1 or signals==1:
-                    print ('-----------' + symbol + '-----------')
-                    print(str(datetime.now()) + ' : ' + str(signals))
+                #if signals ==-1 or signals==1:
+                print ('-----------' + symbol + '-----------')
+                print(str(datetime.now()) + ' : ' + str(signals))

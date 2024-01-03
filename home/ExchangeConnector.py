@@ -16,12 +16,18 @@ class ExchangeConnector:
 
     def fetch_markets(self):
         return self.exchange.fetch_markets()
+    
+    def fetch_markets(self):
+        return self.exchange.fetch_markets()
+    
+    def load_markets(self):
+        return self.exchange.load_markets()
 
     def fetch_ticker(self, symbol):
         return self.exchange.fetch_ticker(symbol)
 
-    def fetch_ohlcv(self, symbol,timeframe, limit):
-        ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, limit)
+    def fetch_ohlcv(self, symbol,timeframe):
+        ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe)
         return ohlcv
 
     def fetch_balance(self):
