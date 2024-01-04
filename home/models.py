@@ -27,10 +27,26 @@ class Coin(models.Model):
         return self.symbol
     class Meta:
         db_table = 'Coin'
+class Strategy(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length = 255) 
+    function_name = models.CharField(max_length = 255) 
+    balance = models.FloatField(blank=True, null=True)
+    periority = models.BooleanField(blank=True, null=True)
+    status = models.BooleanField(blank=True, null=True)
+    created_at = models.DateTimeField(default=datetime.now())
+    updated_at = models.DateTimeField(default=datetime.now())
+    
+    def __str__(self):
+        return self.symbol
+    class Meta:
+        db_table = 'strategy'
         
 class BuyOrder(models.Model):
-    coin = models.ForeignKey(Coin, on_delete=models.CASCADE, related_name='buy_orders')
-    id    = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
+    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
+    coin = models.ForeignKey(Coin, on_delete=models.CASCADE)
+    time_frame  = models.CharField(max_length = 10) 
     buy_price = models.FloatField()
     buy_amount = models.FloatField()
     buy_total = models.FloatField()
@@ -43,9 +59,11 @@ class BuyOrder(models.Model):
     class Meta:
         db_table = 'buy_orders'
 class SellOrder(models.Model):
-    coin = models.ForeignKey(Coin, on_delete=models.CASCADE, related_name='sell_orders')
-    buy_order = models.OneToOneField(BuyOrder, on_delete=models.CASCADE, related_name='sell_order', null=True, blank=True)
-    id    = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
+    strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
+    coin = models.ForeignKey(Coin, on_delete=models.CASCADE)
+    buy_order = models.OneToOneField(BuyOrder, on_delete=models.CASCADE)
+    time_frame  = models.CharField(max_length = 10)
     sell_price = models.FloatField()
     sell_amount = models.FloatField()
     sell_total = models.FloatField()
@@ -58,3 +76,17 @@ class SellOrder(models.Model):
         return f"Sell Order for {self.buy_order}"
     class Meta:
         db_table = 'sell_orders'
+   
+class StrategyTime(models.Model):
+    id    = models.AutoField(primary_key=True)
+    time_frame  = models.CharField(max_length = 10) 
+    periority = models.BooleanField(blank=True, null=True)
+    status = models.BooleanField(blank=True, null=True)
+    created_at = models.DateTimeField(default=datetime.now())
+    updated_at = models.DateTimeField(default=datetime.now())
+
+    def __str__(self):
+        return self.time_frame
+    class Meta:
+        db_table = 'strategy_times'
+     
