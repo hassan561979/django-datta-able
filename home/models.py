@@ -38,7 +38,7 @@ class Strategy(models.Model):
     updated_at = models.DateTimeField(default=datetime.now())
     
     def __str__(self):
-        return self.symbol
+        return self.name
     class Meta:
         db_table = 'strategy'
         

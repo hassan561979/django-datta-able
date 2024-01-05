@@ -2,5 +2,9 @@
     "editor.fontVariations": false,
     "editor.fontLigatures": false,
     "workbench.colorTheme": "Visual Studio Dark",
-    "workbench.preferredDarkColorTheme": "Default Dark+"
+    "workbench.preferredDarkColorTheme": "Default Dark+",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8",
+        "editor.formatOnSave": true
+     }
 }
