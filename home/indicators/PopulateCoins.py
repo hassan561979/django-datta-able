@@ -1,29 +1,26 @@
-from home.ExchangeConnector import ExchangeConnector
+import os
+from home.models import Coin
+
+
 class PopulateCoins():
     def getCoins(exchange):
-    # Load all available spot markets
-        spot_markets = exchange.load_markets()
 
-    # Extract base and quote assets from each spot trading pair with USDT
-        spot_usdt_coin_names = set()
-        for symbol in spot_markets:
-            if 'spot' in spot_markets[symbol]['type'] and spot_markets[symbol]['quote'] == 'USDT':
-                base = spot_markets[symbol]['base']
-                spot_usdt_coin_names.add(base)
+        markets = exchange.fetch_markets()
 
-        coins = set()
-        # Print all spot USDT coin names
-        for coin in spot_usdt_coin_names:
-            if coin !='USDT' or coin !='BUSD' or coin !='FBUSD' or coin !='TUSD':
-                coin = str(coin).replace('DOWN','')
-                coin = str(coin).replace('BEAR','')
-                coin = str(coin).replace('UP','')
-                coin = str(coin).replace('BULL','')
-                coin=coin + 'USDT'
+        # Extract available trading pairs with USDT as the quote currency
+        for market in markets:
+            # Check if trading is allowed (you can buy and sell)
+            if market['info'].get('status', '').lower() == 'trading':
+                # Check if the quote currency is USDT
+                if market['info']['quoteAsset'].lower() == 'usdt':
+                    symbol = market['info']['symbol']
+                    if symbol.find('DOWNUSDT') == -1 and symbol.find('UPUSDT') == -1 and symbol[-1].isdigit() == False:
+                        symbol_exists = Coin.objects.filter(
+                            symbol=symbol).exists()
 
-                if coin not in coins and coin !='' or len(coin) > 1:
-                    coins.add(coin)
-        
-        return coins
-            
-        
+                        if symbol_exists == False:
+                            coin = Coin()
+                            coin.name = symbol
+                            coin.symbol = symbol
+                            coin.status = 1
+                            coin.save()
