@@ -20,14 +20,14 @@ class Command(BaseCommand):
         xx = threading.Thread(target=sell.doSell)
         xx.start()
 
-        strategies = Strategy.objects.all()
+        strategies = Strategy.objects.filter(status=1)
         PopulateCoins.getCoins(exchange)
         coins = Coin.objects.all()
 
         for strategy in strategies:
-            # print(strategy.id)
+            # print(strategy.function_name)
             # os.abort()
-            for strategy_time in strategy.strategy_times.all():
+            for strategy_time in strategy.strategy_times.filter(status=1):
                 buy_obj = Buy(strategy, strategy_time,
                               coins, exchange)
                 x = threading.Thread(target=buy_obj.doBuy)

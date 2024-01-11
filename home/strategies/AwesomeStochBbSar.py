@@ -20,7 +20,7 @@ class AwesomeStochBbSar:
         signals = {'signal': 0, 'log': ''}
 
         if self.order_type == -1:  # sell
-            bb = BollingerBands(df)
+            bb = BollingerBands(df, self.exchange, self.symbol)
             bb_signal = bb.get_signals()
             if bb_signal['signal'] == -1:
                 signals = {'signal': -1, 'log': 'bb: {}'.format(bb_signal)}
@@ -35,7 +35,7 @@ class AwesomeStochBbSar:
             psar = Psar(df)
             psar_signal = psar.get_signals()
             if psar_signal['signal'] == 1:
-                bb = BollingerBands(df)
+                bb = BollingerBands(df, self.exchange, self.symbol)
                 bb_signal = bb.get_signals()
                 if bb_signal['signal'] == 1:
                     signals = {'signal': 1, 'log': 'bb: {}'.format(bb_signal)}

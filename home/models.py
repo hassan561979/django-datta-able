@@ -64,6 +64,7 @@ class StrategyTime(models.Model):
     created_at = models.DateTimeField(default=timezone.now())
     updated_at = models.DateTimeField(default=timezone.now())
     notes = models.TextField(blank=True, null=True)
+    stop_loss_percent = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return self.time_frame
@@ -84,6 +85,12 @@ class BuyOrder(models.Model):
     indicators = models.CharField(max_length=255, blank=True, null=True)
     buy_created_at = models.DateTimeField(default=timezone.now())
     buy_updated_at = models.DateTimeField(default=timezone.now())
+
+    @property
+    def calc_stop_loss(self):
+        price_percent = self.buy_price * \
+            (self.time_frame.stop_loss_percent / 100)
+        return self.buy_price - price_percent
 
     def __str__(self):
         return f"Buy Order {self.id}"

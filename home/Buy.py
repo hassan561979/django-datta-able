@@ -2,10 +2,13 @@
 from datetime import datetime
 from time import sleep
 import os
-from home.AwesomeStochBbSar import AwesomeStochBbSar
+from home.strategies.AwesomeStochBbSar import AwesomeStochBbSar
 from home.services.BuyOrderService import BuyOrderService
 import traceback
 from home.models import Log
+from django.utils import timezone
+from home.models import BuyOrder
+from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
 
 
 class Buy:
@@ -24,23 +27,30 @@ class Buy:
 
             for coin in self.coins:
                 try:
-                    sleep(0.1)
-                    strategy_obj = dynamic_class(
-                        self.exchange, coin.symbol, self.strategy_time.time_frame, 1)
+                    buy_orders_without_sell = BuyOrder.objects.filter(
+                        sellorder__isnull=True)
+                    if len(buy_orders_without_sell) >= 200:
+                        continue
+                    else:
+                        sleep(0.1)
+                        strategy_obj = dynamic_class(
+                            self.exchange, coin.symbol, self.strategy_time.time_frame, 1)
 
-                    signal = strategy_obj.get_signals()
-                    if signal['signal'] == 1:
-                        BuyOrderService(
-                            self.strategy, self.strategy_time, coin, self.exchange, signal)
-                        print(str(datetime.now()) + ':' + self.strategy.function_name + ' : ' + self.strategy_time.time_frame +
-                              ':' + coin.symbol + ':{}'.format(signal))
-                        print('====================================================')
+                        signal = strategy_obj.get_signals()
+                        if signal['signal'] == 1:
+                            BuyOrderService(
+                                self.strategy, self.strategy_time, coin, self.exchange, signal)
+                            print(str(datetime.now()) + ':' + self.strategy.function_name + ' : ' + self.strategy_time.time_frame +
+                                  ':' + coin.symbol + ':{}'.format(signal))
+                            print(
+                                '====================================================')
 
-                        # signal=AwesomeStochBbSar(exchange,symbol,'5m',-1).get_signals()
-                        # print (symbol + ':{}'.format(signal))
+                            # signal=AwesomeStochBbSar(exchange,symbol,'5m',-1).get_signals()
+                            # print (symbol + ':{}'.format(signal))
                 except Exception as e:
                     traceback_info = traceback.format_exc()
-                    Log.objects.create(log=traceback_info)
+                    Log.objects.create(log=traceback_info,
+                                       created_at=timezone.now(), updated_at=timezone.now())
                     continue
 
                 finally:
