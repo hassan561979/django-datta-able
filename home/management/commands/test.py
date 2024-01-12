@@ -15,7 +15,7 @@ from home.models import BuyOrder
 from home.ExchangeConnector import ExchangeConnector
 import pandas as pd
 from home.indicators.Ema import Ema
-from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
+from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
 
 
 class Command(BaseCommand):
@@ -31,5 +31,5 @@ class Command(BaseCommand):
     # print(symbols)
     exchange = ExchangeConnector('binance')
     for coin in Coin.objects.all():
-        signal = AwesomeStochBbSarEma200(exchange, coin.symbol, '5m', 1)
+        signal = AwesomeStochBbSarEma200_2(exchange, coin.symbol, '1m', 1)
         print(coin.symbol + ':' + str(signal.signals))

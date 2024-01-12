@@ -8,6 +8,7 @@ import os
 from home.indicators.PopulateCoins import PopulateCoins
 from home.models import Coin
 import os
+import math
 
 
 class Ema:
@@ -23,6 +24,7 @@ class Ema:
 
         # Create a 'signal' column based on EMA 200 crossings
         signal = 0
+
         if self.df['low'].iloc[-1] > self.df['ema_200'].iloc[-1]:
 
             signal = 1  # Buy signal

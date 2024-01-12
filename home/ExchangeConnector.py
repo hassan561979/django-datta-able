@@ -1,5 +1,7 @@
 import ccxt
 import os
+import calendar
+from datetime import datetime
 
 
 class ExchangeConnector:
@@ -41,7 +43,13 @@ class ExchangeConnector:
     def fetch_ticker(self, symbol):
         return self.exchange.fetch_ticker(symbol)
 
-    def fetch_ohlcv(self, symbol, timeframe):
+    def fetch_ohlcv(self, symbol, timeframe, since=1704461252000, limit=10000):
+        # now = datetime.utcnow()
+        # unixtime = calendar.timegm(now.utctimetuple())
+        # since = (unixtime - 60*60) * 1000  # UTC timestamp in milliseconds
+
+        # ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
+
         ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe)
         return ohlcv
 
@@ -83,7 +91,6 @@ if __name__ == "__main__":
     # Replace 'YOUR_API_KEY' and 'YOUR_API_SECRET' with your actual API key and secret
     api_key = 'YOUR_API_KEY'
     api_secret = 'YOUR_API_SECRET'
-
     # Create an instance of the ExchangeConnector class
     connector = ExchangeConnector(exchange_name, api_key, api_secret)
 

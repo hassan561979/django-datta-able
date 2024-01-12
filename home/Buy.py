@@ -9,6 +9,7 @@ from home.models import Log
 from django.utils import timezone
 from home.models import BuyOrder
 from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
+from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
 
 
 class Buy:
@@ -32,6 +33,9 @@ class Buy:
                     if len(buy_orders_without_sell) >= 200:
                         continue
                     else:
+                        buy_order = BuyOrder.objects.filter(
+                            strategy_id=self.strategy.id, coin_id=coin.id, time_frame_id=self.strategy_time.id).last()
+
                         sleep(0.1)
                         strategy_obj = dynamic_class(
                             self.exchange, coin.symbol, self.strategy_time.time_frame, 1)
