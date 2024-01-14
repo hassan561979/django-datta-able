@@ -8,6 +8,7 @@ from home.Buy import Buy
 import threading
 from home.models import Coin
 from home.Sell import Sell
+from home.SellTest import SellTest
 
 
 class Command(BaseCommand):
@@ -15,20 +16,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        exchange = ExchangeConnector("binance")
-        sell = Sell(exchange)
-        xx = threading.Thread(target=sell.doSell)
-        xx.start()
+        # exchange = ExchangeConnector("binance")
+        # sell = Sell(exchange)
+        # sell.doSell()
+        sell = SellTest(None)
+        sell.doSell()
+        # xx = threading.Thread(target=sell.doSell)
+        # xx.start()
 
-        strategies = Strategy.objects.filter(status=1)
-        PopulateCoins.getCoins(exchange)
-        coins = Coin.objects.all()
+        # strategies = Strategy.objects.filter(status=1)
+        # PopulateCoins.getCoins(exchange)
+        # coins = Coin.objects.all()
 
-        for strategy in strategies:
-            # print(strategy.function_name)
-            # os.abort()
-            for strategy_time in strategy.strategy_times.filter(status=1):
-                buy_obj = Buy(strategy, strategy_time,
-                              coins, exchange)
-                x = threading.Thread(target=buy_obj.doBuy)
-                x.start()
+        # for strategy in strategies:
+
+        #    for strategy_time in strategy.strategy_times.filter(status=1):
+        #        buy_obj = Buy(strategy, strategy_time,
+        #                      coins, exchange)
+        #        x = threading.Thread(target=buy_obj.doBuy)
+        #        x.start()

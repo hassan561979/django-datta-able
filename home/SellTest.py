@@ -12,30 +12,47 @@ from home.services.StopLoss import StopLoss
 from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
 from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 
-class Sell:
+class SellTest:
     def __init__(self, exchange) -> None:
         self.exchange = exchange
 
     def doSell(self) -> None:
+        # Number of tasks to run in parallel
+        num_tasks = 2
+
+        # Using ThreadPoolExecutor to run tasks in parallel
+        with ThreadPoolExecutor(max_workers=num_tasks) as executor:
+            # Submit each task to the executor
+            for i in range(num_tasks):
+                future_to_task = {executor.submit(
+                    self.long_running_task, i)}
+
+            # Wait for all tasks to complete
+            for future in as_completed(future_to_task):
+                task_id = future_to_task[future]
+                try:
+                    # Retrieve the result of each task
+                    result = future.result()
+                    self.stdout.write(self.style.SUCCESS(
+                        f"Task {task_id} result: {result}"))
+                except Exception as e:
+                    self.stderr.write(self.style.ERROR(
+                        f"Task {task_id} failed with exception: {e}"))
+
+    def long_running_task(self, task_id):
         while True:
-            try:
-                buy_orders_without_sell = BuyOrder.objects.filter(
-                    sellorder__isnull=True)
-                for order in buy_orders_without_sell:
-                    bb = threading.Thread(target=self.doSellCoin(order))
-                    bb.start()
+            # Simulate a long-running task
+            self.stdout.write(self.style.SUCCESS(f"Task {task_id} started"))
+            if task_id == 1:
+                time.sleep(1)
+            else:
+                time.sleep(5)
 
-            except Exception as e:
-                print(e)
-                traceback_info = traceback.format_exc()
-                Log.objects.create(log=traceback_info,
-                                   created_at=timezone.now(), updated_at=timezone.now())
-                continue
-
-            finally:
-                continue
+            self.stdout.write(self.style.SUCCESS(f"Task {task_id} completed"))
 
     def doSellCoin(self, order) -> None:
         # while True:

@@ -1,6 +1,6 @@
 from home.PandasUtil import PandasUtil as pu
 from home.indicators.AwesomeStoch import AwesomeStoch
-from home.indicators.AwesomePsar import AwesomePsar
+from home.indicators.Psar import Psar
 from home.indicators.BollingerBands import BollingerBands
 import os
 from home.indicators.Ema import Ema
@@ -38,7 +38,7 @@ class AwesomeStochBbSarEma200_2:
             signals = {'signal': 0, 'log': 'ema_200: {}'.format(ema_signal)}
 
             if ema_signal['signal'] == 1:
-                psar = AwesomePsar(df)
+                psar = Psar(df)
                 psar_signal = psar.get_signals()
                 if psar_signal['signal'] == 1:
                     bb = BollingerBands(df, self.exchange, self.symbol)

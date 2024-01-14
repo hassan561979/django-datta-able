@@ -10,7 +10,6 @@ from django.utils import timezone
 from home.models import BuyOrder
 from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
 from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
-import threading
 
 
 class Buy:
@@ -29,26 +28,37 @@ class Buy:
 
             for coin in self.coins:
                 try:
-                    buy_orders_without_sell = BuyOrder.objects.filter(strategy_id=self.strategy.id, time_frame_id=self.strategy_time.id,
-                                                                      sellorder__isnull=True)
-                    if len(buy_orders_without_sell) >= 50:
+                    buy_orders_without_sell = BuyOrder.objects.filter(
+                        sellorder__isnull=True)
+                    if len(buy_orders_without_sell) >= 200:
                         continue
                     else:
                         # find_buy_order = BuyOrder.objects.filter(
-                        #    strategy_id=self.strategy.sid, coin_id=coin.id, time_frame_id=self.strategy_time.id).last()
+                        #    strategy_id=self.strategy.id, coin_id=coin.id, time_frame_id=self.strategy_time.id).last()
 
                         buy_order_without_sell = BuyOrder.objects.filter(strategy_id=self.strategy.id, coin_id=coin.id, time_frame_id=self.strategy_time.id,
                                                                          sellorder__isnull=True).last()
                         if buy_order_without_sell is not None:
-                            # print('found')
+                            print('found')
                             continue
                         else:
-                            # print('not found')
+                            print('not found')
 
-                            cc = threading.Thread(
-                                target=self.doBuyCoin(dynamic_class, coin))
-                            cc.start()
+                        # sleep(0.1)
+                        strategy_obj = dynamic_class(
+                            self.exchange, coin.symbol, self.strategy_time.time_frame, 1)
 
+                        signal = strategy_obj.get_signals()
+                        if signal['signal'] == 1:
+                            BuyOrderService(
+                                self.strategy, self.strategy_time, coin, self.exchange, signal)
+                            print(str(datetime.now()) + ':' + self.strategy.function_name + ' : ' + self.strategy_time.time_frame +
+                                  ':' + coin.symbol + ':{}'.format(signal))
+                            print(
+                                '====================================================')
+
+                            # signal=AwesomeStochBbSar(exchange,symbol,'5m',-1).get_signals()
+                            # print (symbol + ':{}'.format(signal))
                 except Exception as e:
                     print(e)
                     traceback_info = traceback.format_exc()
@@ -61,27 +71,3 @@ class Buy:
 
             print('loop end' + ':' + str(datetime.now()) + ':' +
                   self.strategy.function_name + ' : ' + self.strategy_time.time_frame)
-
-    def doBuyCoin(self, dynamic_class, coin) -> None:
-        try:
-            strategy_obj = dynamic_class(
-                self.exchange, coin.symbol, self.strategy_time.time_frame, 1)
-
-            signal = strategy_obj.get_signals()
-            if signal['signal'] == 1:
-                BuyOrderService(
-                    self.strategy, self.strategy_time, coin, self.exchange, signal)
-
-                print(str(datetime.now()) + ':' + self.strategy.function_name + ' : ' + self.strategy_time.time_frame +
-                      ':' + coin.symbol + ':{}'.format(signal))
-                print('====================================================')
-
-                # signal=AwesomeStochBbSar(exchange,symbol,'5m',-1).get_signals()
-                # print (symbol + ':{}'.format(signal))
-        except Exception as e:
-            print(e)
-            traceback_info = traceback.format_exc()
-            Log.objects.create(log=traceback_info,
-                               created_at=timezone.now(), updated_at=timezone.now())
-        finally:
-            return
