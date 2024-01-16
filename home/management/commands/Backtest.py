@@ -6,6 +6,6 @@ from home.strategies.Backtest import BacktestView
 class Command(BaseCommand):
     help = 'run strategies'
 
-    exchnage = ExchangeConnector('binance')
-    backtest_view = BacktestView(exchnage)
+    # exchnage = ExchangeConnector('binance')
+    backtest_view = BacktestView()
     result = backtest_view.backtest()

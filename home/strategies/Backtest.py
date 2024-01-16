@@ -6,6 +6,7 @@ import backtrader as bt
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import yfinance as yf
 
 
 class MyStrategy(bt.Strategy):
@@ -42,7 +43,8 @@ class MyStrategy(bt.Strategy):
                 self.sell()
                 self.buy_flag = 0
 
-        elif self.buy_flag == 0 and (self.data.close > self.ema and self.data.close > self.psar) and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+        # elif self.buy_flag == 0 and (self.data.close > self.ema and self.data.close > self.psar) and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+        elif self.buy_flag == 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             self.buy_flag = 1
             self.buy()
             self.buy_price = self.data.close
@@ -70,28 +72,32 @@ class MyStrategy(bt.Strategy):
 
 
 class BacktestView:
-    def __init__(self, exchange, symbol='PROS/USDT', timeframe='1m', initial_balance=100000):
+    def __init__(self, exchange='binance', symbol='SOL/USDT', timeframe='30m', initial_balance=100000):
         self.exchange = exchange
         self.symbol = symbol
         self.timeframe = timeframe
         self.initial_balance = initial_balance
 
     def backtest(self):
-        # You can change this to your desired exchange
 
-        ohlcv = self.exchange.fetch_ohlcv(self.symbol, self.timeframe)
+        # ohlcv = self.exchange.fetch_ohlcv(self.symbol, self.timeframe)
         # Convert ohlcv list to DataFrame
-        df = pd.DataFrame(
-            ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        df.set_index('timestamp', inplace=True)
+        # df = pd.DataFrame(
+        #    ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        # df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        # df.set_index('timestamp', inplace=True)
 
-        df = df.tail(10000)
+        # df = df.tail(10000)
+        symbol = 'ETH-USD'  # Yahoo Finance symbol for DOT/USDT
+        timeframe = '1d'  # Daily data
+        data = yf.download(symbol, start="2022-01-01",
+                           end="2023-01-01", interval=timeframe)
 
-        data = bt.feeds.PandasData(dataname=df)
+        data = bt.feeds.PandasData(dataname=data)
 
         # Create cerebro engine
         cerebro = bt.Cerebro()
+
         cerebro.adddata(data)
         cerebro.addstrategy(MyStrategy)
 

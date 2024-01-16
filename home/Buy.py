@@ -44,16 +44,17 @@ class Buy:
                             continue
                         else:
                             # print('not found')
-
-                            cc = threading.Thread(
-                                target=self.doBuyCoin(dynamic_class, coin))
-                            cc.start()
+                            self.doBuyCoin(dynamic_class, coin)
+                            # cc = threading.Thread(
+                            #    target=self.doBuyCoin(dynamic_class, coin))
+                            # cc.start()
 
                 except Exception as e:
                     print(e)
                     traceback_info = traceback.format_exc()
                     Log.objects.create(log=traceback_info,
                                        created_at=timezone.now(), updated_at=timezone.now())
+                    sleep(2)
                     continue
 
                 finally:
@@ -83,5 +84,6 @@ class Buy:
             traceback_info = traceback.format_exc()
             Log.objects.create(log=traceback_info,
                                created_at=timezone.now(), updated_at=timezone.now())
+            sleep(2)
         finally:
             return

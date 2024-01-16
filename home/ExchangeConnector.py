@@ -2,6 +2,7 @@ import ccxt
 import os
 import calendar
 from datetime import datetime
+from time import sleep
 
 
 class ExchangeConnector:
@@ -41,6 +42,7 @@ class ExchangeConnector:
         return self.exchange.load_markets()
 
     def fetch_ticker(self, symbol):
+        # sleep(0.1)
         return self.exchange.fetch_ticker(symbol)
 
     def fetch_ohlcv(self, symbol, timeframe, since=1704461252000, limit=10000):
@@ -49,7 +51,7 @@ class ExchangeConnector:
         # since = (unixtime - 60*60) * 1000  # UTC timestamp in milliseconds
 
         # ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
-
+        # sleep(0.1)
         ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe)
         return ohlcv
 

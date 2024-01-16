@@ -9,6 +9,7 @@ import threading
 from home.models import Coin
 from home.Sell import Sell
 from home.SellTest import SellTest
+from home.ParallelTaskRunner import ParallelTaskRunner
 
 
 class Command(BaseCommand):
@@ -19,19 +20,23 @@ class Command(BaseCommand):
         # exchange = ExchangeConnector("binance")
         # sell = Sell(exchange)
         # sell.doSell()
-        sell = SellTest(None)
-        sell.doSell()
+
+        exchange = ExchangeConnector("binance")
+
         # xx = threading.Thread(target=sell.doSell)
         # xx.start()
 
-        # strategies = Strategy.objects.filter(status=1)
-        # PopulateCoins.getCoins(exchange)
-        # coins = Coin.objects.all()
+        strategies = Strategy.objects.filter(status=1)
+        PopulateCoins.getCoins(exchange)
+        coins = Coin.objects.all()
 
-        # for strategy in strategies:
+        for strategy in strategies:
 
-        #    for strategy_time in strategy.strategy_times.filter(status=1):
-        #        buy_obj = Buy(strategy, strategy_time,
-        #                      coins, exchange)
-        #        x = threading.Thread(target=buy_obj.doBuy)
-        #        x.start()
+            for strategy_time in strategy.strategy_times.filter(status=1):
+                buy_obj = Buy(strategy, strategy_time,
+                              coins, exchange)
+                x = threading.Thread(target=buy_obj.doBuy)
+                x.start()
+
+        sell = SellTest(exchange)
+        sell.doSell()
