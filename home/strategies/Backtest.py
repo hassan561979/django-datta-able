@@ -6,7 +6,6 @@ import backtrader as bt
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-import yfinance as yf
 
 
 class MyStrategy(bt.Strategy):
@@ -18,7 +17,7 @@ class MyStrategy(bt.Strategy):
         ("bbands_dev", 2),
         ("stochastic_period", 14),
         ("stochastic_d_period", 3),
-        ("stop_loss_percent", 2.0),  # 1.0% stop-loss
+        ("stop_loss_percent", 5.0),  # 1.0% stop-loss
 
     )
 
@@ -37,63 +36,46 @@ class MyStrategy(bt.Strategy):
         if self.buy_flag == 1 and (self.data.close > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
             self.buy_flag = 0
             self.sell()
+            # print('sell: ' + str(self.buy_flag) +
+            #      ',' + str(self.data.close[0]))
 
         elif self.buy_flag == 1:
-            if self.data.close <= self.sell_price:
-                self.sell()
+            if self.data.close <= self.stop_loss:
                 self.buy_flag = 0
+                self.sell()
+                # print('sell stop loss: ' + str(self.stop_loss))
 
-        # elif self.buy_flag == 0 and (self.data.close > self.ema and self.data.close > self.psar) and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-        elif self.buy_flag == 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            self.buy_flag = 1
+        elif self.buy_flag == 0 and (self.data.close > self.ema and self.data.close > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD))):
+            # elif self.buy_flag == 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             self.buy()
             self.buy_price = self.data.close
-
+            # print('buy : ' + str(self.data.close[0]))
             price_percent = self.buy_price * self.params.stop_loss_percent / 100
-            self.sell_price = self.buy_price - price_percent
-
-    def notify_order(self, order):
-        if order.status in [order.Completed, order.Canceled, order.Margin]:
-            return  # Ignore completed/canceled/margin orders
-
-        if order.status in [order.Submitted, order.Accepted]:
-            return  # Ignore submitted/accepted orders
-
-        # Check if the order was a buy or sell
-        if order.isbuy():
-            self.log(
-                f"BUY EXECUTED - Price: {order.executed.price}, Cost: {order.executed.value}, Commission: {order.executed.comm}")
-            self.sell(exectype=bt.Order.Stop, price=order.executed.price *
-                      (1.0 - self.params.stop_loss_percent / 100.0))
-
-        elif order.issell():
-            self.log(
-                f"SELL EXECUTED - Price: {order.executed.price}, Cost: {order.executed.value}, Commission: {order.executed.comm}")
+            self.stop_loss = self.buy_price - price_percent
+            # print('stop loss : ' + str(self.stop_loss))
+            self.buy_flag = 1
 
 
 class BacktestView:
-    def __init__(self, exchange='binance', symbol='SOL/USDT', timeframe='30m', initial_balance=100000):
+    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100):
         self.exchange = exchange
         self.symbol = symbol
+        self.start_date = start_date
+        self.end_date = end_date
         self.timeframe = timeframe
         self.initial_balance = initial_balance
 
     def backtest(self):
 
-        # ohlcv = self.exchange.fetch_ohlcv(self.symbol, self.timeframe)
+        ohlcv = self.exchange.get_bulk_ohlcv(
+            self.symbol, self.timeframe, self.start_date, self.end_date)
         # Convert ohlcv list to DataFrame
-        # df = pd.DataFrame(
-        #    ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        # df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        # df.set_index('timestamp', inplace=True)
+        df = pd.DataFrame(
+            ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
 
-        # df = df.tail(10000)
-        symbol = 'ETH-USD'  # Yahoo Finance symbol for DOT/USDT
-        timeframe = '1d'  # Daily data
-        data = yf.download(symbol, start="2022-01-01",
-                           end="2023-01-01", interval=timeframe)
-
-        data = bt.feeds.PandasData(dataname=data)
+        data = bt.feeds.PandasData(dataname=df)
 
         # Create cerebro engine
         cerebro = bt.Cerebro()
@@ -102,23 +84,17 @@ class BacktestView:
         cerebro.addstrategy(MyStrategy)
 
         # Set initial cash amount
-        cerebro.broker.set_cash(1000)
+        cerebro.broker.set_cash(self.initial_balance)
         # Print the starting cash amount
         print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-        # Run the strategy
         cerebro.run()
 
-        # Print the ending cash amount
-        print('Ending Portfolio Value: %.2f' % cerebro.broker.getvalue())
+        # print('Ending Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-        # Plot the results
-        cerebro.plot(style='candlestick', volume=False)
+        # cerebro.plot(style='candlestick', volume=False)
 
-        # Save the plot to a file (optional)
-        plt.savefig('backtest_plot.png')
-
-        # Display the plot
-        plt.show()
-
-        return 'Backtest completed successfully'
+        # plt.savefig('backtest_plot.png')
+        # plt.show()
+        return cerebro.broker.getvalue()
+        # return 'Backtest completed successfully'

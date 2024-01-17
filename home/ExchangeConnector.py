@@ -45,14 +45,33 @@ class ExchangeConnector:
         # sleep(0.1)
         return self.exchange.fetch_ticker(symbol)
 
-    def fetch_ohlcv(self, symbol, timeframe, since=1704461252000, limit=10000):
+    def get_bulk_ohlcv(self, symbol, timeframe, start_date, end_date):
+        ohlcv = []
+
+        since = int(datetime.strptime(
+            start_date, '%Y-%m-%d').timestamp()) * 1000
+        until = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp()) * 1000
+
+        while since < until:
+            # Fetching OHLCV data in chunks due to Binance API limitations
+            candles = self.fetch_ohlcv(symbol, timeframe, since)
+            if not candles:
+                break
+
+            ohlcv.extend(candles)
+            since = candles[-1][0] + 1
+            sleep(0.1)
+
+        return ohlcv
+
+    def fetch_ohlcv(self, symbol, timeframe, since=1704461252000, limit=500):
         # now = datetime.utcnow()
         # unixtime = calendar.timegm(now.utctimetuple())
         # since = (unixtime - 60*60) * 1000  # UTC timestamp in milliseconds
 
         # ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
         # sleep(0.1)
-        ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe)
+        ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since)
         return ohlcv
 
     def fetch_balance(self):
