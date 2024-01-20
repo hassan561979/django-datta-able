@@ -24,12 +24,12 @@ class Command(BaseCommand):
         # symbols = Coin.objects.exclude(
         #    symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])
 
-        symbols = Coin.objects.filter(symbol='MKRUSDT')
+        symbols = Coin.objects.filter(symbol='DOTUSDT')
 
         timeframe = options['timeframe']  # Daily timeframe, change as needed
         stoploss = options['stopLoss']
-        start_date = '2023-12-01'  # Your start date
-        end_date = '2024-01-17'    # Your end date
+        start_date = '2023-06-01'  # Your start date
+        end_date = '2024-01-18'    # Your end date
 
         exchange = ExchangeConnector('binance')
         initial_balance = 100
@@ -51,5 +51,5 @@ class Command(BaseCommand):
             finally:
                 continue
 
-        print('time frame: ' + timeframe + ',stop loss: ' +
-              str(stoploss) + ',final profit : ' + str(initial_balance))
+        # print('time frame: ' + timeframe + ',stop loss: ' +
+        #      str(stoploss) + ',final profit : ' + str(initial_balance))

@@ -26,7 +26,7 @@ class MyStrategy(bt.Strategy):
 
     def __init__(self):
         self.stop_loss_percent = self.params.stop_loss_percent
-
+        self.last_buy_order = None
         self.buy_flag = 0
         self.ema = bt.indicators.ExponentialMovingAverage(
             self.data.close, period=self.params.ema_period)
@@ -38,32 +38,96 @@ class MyStrategy(bt.Strategy):
             self.data, period=self.params.stochastic_period)
 
     def next(self):
-        if self.buy_flag == 1:
-            if (self.data.close > self.bbands.lines.top) or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80):
-                self.buy_flag = 0
-                # print('sell: ' + str(self.buy_flag) +
-                #      ',' + str(self.data.close[0]))
-                self.sell()
 
-        elif self.buy_flag == 1:
-            if self.data.close <= self.stop_loss:
-                self.buy_flag = 0
-                # print('sell stop loss: ' + str(self.stop_loss))
-                self.sell()
+        # elif self.buy_flag == 1:
+        #    if self.data.close <= self.stop_loss:
+        #        self.buy_flag = 0
 
-        elif self.buy_flag == 0 and (self.data.close > self.ema and self.data.close > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD))):
-            # elif self.buy_flag == 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            self.buy_price = self.data.close
-            # print('buy : ' + str(self.data.close[0]))
-            price_percent = self.buy_price * self.stop_loss_percent / 100
-            self.stop_loss = self.buy_price - price_percent
-            # print('stop loss : ' + str(self.stop_loss))
-            self.buy_flag = 1
+        #       # print('sell stop loss: ' + str(self.stop_loss))
+        #       self.sell()
+        # print(self.position.size)
+
+        if self.position.size > 0 and self.data.close <= self.stop_loss_price:
+            # Place a stop-loss order
+            # if self.last_buy_order:
+            #    self.sell(parent=self.last_buy_order)
+            self.sell()
+            print('stop lost test')
+
+        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+            # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+            # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
+            # self.last_buy_order = self.order_target_value(
+            #    target=self.broker.getvalue())
             self.buy()
+            self.stop_loss_price = self.data.close * \
+                (1 - (self.params.stop_loss_percent / 100))
+
+            print('current price: ' + str(self.data.close[0]))
+            print('stop loss : ' + str(self.stop_loss_price))
+
+        elif self.position.size > 0 and (self.data.close > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
+
+            # print('sell: ' + str(self.buy_flag) +
+            #      ',' + str(self.data.close[0]))
+            # if self.last_buy_order:
+            #    self.sell(parent=self.last_buy_order)
+            self.sell()
+
+    def notify_order(self, order):
+        # if order.status in [order.Submitted, order.Accepted]:
+        # print('Portfolio Value: %.2f' % self.broker.getvalue())
+
+        # if order.isbuy():
+        #    print(f"Buy order {order.ref} submitted/accepted")
+        # elif order.issell():
+        #    print(f"Sell order {order.ref} submitted/accepted")
+
+        # print('Portfolio Value: %.2f' % self.broker.getvalue())
+
+        if order.status in [order.Completed]:
+            # Order completed, do something
+            print(f"Order {order.ref} {bt.Order.Status[order.status]}")
+            # Order completed, print order type
+            if order.isbuy():
+                print(f"Buy order {order.ref} completed")
+                print('BUY EXECUTED, Price: %.2f, Total Amount: %.2f, Total Coins: %.8f, Comm %.2f, Date: %s' %
+                      (order.executed.price,
+                          order.executed.value,
+                          order.executed.size,
+                          order.executed.comm,
+                          bt.num2date(order.executed.dt).strftime('%Y-%m-%d %H:%M:%S')))
+            elif order.issell():
+                print(f"Sell order {order.ref} completed")
+                print('SELL EXECUTED, Price: %.2f, Total Amount: %.2f, Total Coins: %.8f, Comm %.2f, Date: %s' %
+                      (order.executed.price,
+                          order.executed.value,
+                          order.executed.size,
+                          order.executed.comm,
+                          bt.num2date(order.executed.dt).strftime('%Y-%m-%d %H:%M:%S')))
+            # elif order.exectype == bt.Order.Stop:
+            #    print('STOP LOSS EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+            #          (order.executed.price,
+            #              order.executed.value,
+            #              order.executed.comm))
+
+            print('Portfolio Value: %.2f' % self.broker.getvalue())
+
+        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+            # Order canceled, do something
+            print(f"Order {order.ref} {bt.Order.Status[order.status]}")
+            # Order canceled, print order type
+            if order.isbuy():
+                print(f"Buy order {order.ref} canceled")
+            elif order.issell():
+                print(f"Sell order {order.ref} canceled")
+
+            print('Portfolio Value: %.2f' % self.broker.getvalue())
+        print('==================================================')
 
 
 class BacktestView:
-    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100, stop_loss_percent=3, plot=False):
+    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100, stop_loss_percent=1, plot=False):
         self.exchange = exchange
         self.symbol = symbol
         self.start_date = start_date
@@ -92,9 +156,12 @@ class BacktestView:
         cerebro.addstrategy(
             MyStrategy, stop_loss_percent=self.stop_loss_percent)
 
-        # Set initial cash amount
+        # Set the commission (fees)
+        cerebro.broker.setcommission(
+            commission=0.001)
+
         cerebro.broker.set_cash(self.initial_balance)
-        # Print the starting cash amount
+
         print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
         cerebro.run()
@@ -105,5 +172,6 @@ class BacktestView:
 
             plt.savefig('backtest_plot.png')
             plt.show()
+
         return cerebro.broker.getvalue()
         # return 'Backtest completed successfully'
