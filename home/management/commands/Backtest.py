@@ -21,23 +21,30 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Change it according to your requirements
         # symbols = ['APE/USDT', 'SOL/USDT', 'DOT/USDT', 'MOVR/USDT']
-        # symbols = Coin.objects.exclude(
-        #    symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])
+        symbols = Coin.objects.exclude(
+            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])
 
-        symbols = Coin.objects.filter(symbol='DOTUSDT')
+        # symbols = Coin.objects.filter(symbol__in=['SOLUSDT'])
 
         timeframe = options['timeframe']  # Daily timeframe, change as needed
         stoploss = options['stopLoss']
-        start_date = '2023-06-01'  # Your start date
-        end_date = '2024-01-18'    # Your end date
+
+        start_date = '2022-02-17'  # Your start date
+        end_date = '2022-05-26'    # Your end date
+
+        # start_date = '2021-12-08'  # Your start date // very bearish
+        # end_date = '2022-04-15'    # Your end date
+
+        # start_date = '2024-01-01'  # Your start date // very bearish
+        # end_date = '2024-01-20'    # Your end date
 
         exchange = ExchangeConnector('binance')
-        initial_balance = 100
+        initial_balance = 1000
         for symbol in symbols:
             try:
                 print('symbol: ' + symbol.symbol)
                 backtest_view = BacktestView(
-                    exchange, symbol.symbol, start_date, end_date, timeframe, initial_balance, stoploss, True)
+                    exchange, symbol.symbol, start_date, end_date, timeframe, initial_balance, stoploss, False)
                 initial_balance = backtest_view.backtest()
                 print('time frame: ' + timeframe + ',stop loss: ' +
                       str(stoploss) + ',profit : ' + str(initial_balance))

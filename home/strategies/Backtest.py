@@ -26,7 +26,7 @@ class MyStrategy(bt.Strategy):
 
     def __init__(self):
         self.stop_loss_percent = self.params.stop_loss_percent
-        self.last_buy_order = None
+        self.last_executed_size = 0
         self.buy_flag = 0
         self.ema = bt.indicators.ExponentialMovingAverage(
             self.data.close, period=self.params.ema_period)
@@ -52,13 +52,17 @@ class MyStrategy(bt.Strategy):
             # if self.last_buy_order:
             #    self.sell(parent=self.last_buy_order)
             self.sell()
-            print('stop lost test')
+            # self.sell(size=self.last_executed_size)
+            # Sell all to exit the position
+            # self.order_target_percent(target=0)
+
+            print('stop loss sell: ' + str(self.data.close[0]))
 
         elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
-            # self.last_buy_order = self.order_target_value(
-            #    target=self.broker.getvalue())
+            # self.order_target_value(target=self.broker.getvalue())
+            # self.order_target_percent(target=100)
             self.buy()
             self.stop_loss_price = self.data.close * \
                 (1 - (self.params.stop_loss_percent / 100))
@@ -72,7 +76,12 @@ class MyStrategy(bt.Strategy):
             #      ',' + str(self.data.close[0]))
             # if self.last_buy_order:
             #    self.sell(parent=self.last_buy_order)
+            print('normal sell: ' + str(self.data.close[0]))
             self.sell()
+            # if self.last_executed_order:
+            # self.sell(size=self.last_executed_size)
+            # Sell all to exit the position
+            # self.order_target_percent(target=0)
 
     def notify_order(self, order):
         # if order.status in [order.Submitted, order.Accepted]:
@@ -97,6 +106,10 @@ class MyStrategy(bt.Strategy):
                           order.executed.size,
                           order.executed.comm,
                           bt.num2date(order.executed.dt).strftime('%Y-%m-%d %H:%M:%S')))
+                # self.last_executed_size = round(
+                #    self.broker.getvalue() / order.executed.price)
+                # self.last_executed_size = order.executed.size
+
             elif order.issell():
                 print(f"Sell order {order.ref} completed")
                 print('SELL EXECUTED, Price: %.2f, Total Amount: %.2f, Total Coins: %.8f, Comm %.2f, Date: %s' %
@@ -105,6 +118,7 @@ class MyStrategy(bt.Strategy):
                           order.executed.size,
                           order.executed.comm,
                           bt.num2date(order.executed.dt).strftime('%Y-%m-%d %H:%M:%S')))
+
             # elif order.exectype == bt.Order.Stop:
             #    print('STOP LOSS EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
             #          (order.executed.price,
@@ -122,7 +136,7 @@ class MyStrategy(bt.Strategy):
             elif order.issell():
                 print(f"Sell order {order.ref} canceled")
 
-            print('Portfolio Value: %.2f' % self.broker.getvalue())
+        print('Portfolio Value: %.2f' % self.broker.getvalue())
         print('==================================================')
 
 
@@ -161,6 +175,7 @@ class BacktestView:
             commission=0.001)
 
         cerebro.broker.set_cash(self.initial_balance)
+        cerebro.addsizer(bt.sizers.PercentSizer, percents=10)
 
         print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
