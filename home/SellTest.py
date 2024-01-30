@@ -14,6 +14,7 @@ from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
 import time
+from home.strategies.AwesomeStochBbSarEma200_3 import AwesomeStochBbSarEma200_3
 
 
 class SellTest:
@@ -26,6 +27,8 @@ class SellTest:
                 buy_orders_without_sell = BuyOrder.objects.filter(
                     sellorder__isnull=True)
                 num_tasks = len(buy_orders_without_sell)
+                if num_tasks == 0:
+                    continue
                 # for order in buy_orders_without_sell:
                 # bb = threading.Thread(target=self.doSellCoin(order))
                 # bb.start()
@@ -47,7 +50,7 @@ class SellTest:
                 traceback_info = traceback.format_exc()
                 Log.objects.create(log=traceback_info,
                                    created_at=timezone.now(), updated_at=timezone.now())
-                sleep(2)
+                # sleep(0.5)
             finally:
                 continue
 
@@ -82,5 +85,5 @@ class SellTest:
                 # signal=AwesomeStochBbSar(exchange,symbol,'5m',-1).get_signals()
                 # print (symbol + ':{}'.format(signal))
 
-        # print('doing sell : ' + order.coin.symbol +
-        #      ',' + order.time_frame.time_frame)
+        print('doing sell : ' + order.coin.symbol +
+              ',' + order.time_frame.time_frame)

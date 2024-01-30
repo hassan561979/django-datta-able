@@ -8,22 +8,23 @@ from django.contrib.auth.decorators import login_required
 
 from .models import *
 
+
 def index(request):
 
-  context = {
-    'segment'  : 'index',
-    #'products' : Product.objects.all()
-  }
-  return render(request, "pages/index.html", context)
+    context = {
+        'segment': 'index',
+        # 'products' : Product.objects.all()
+    }
+    return render(request, "pages/index.html", context)
+
 
 def tables(request):
-  context = {
-    'segment': 'tables'
-  }
-  return render(request, "pages/dynamic-tables.html", context)
+    context = {
+        'segment': 'tables'
+    }
+    return render(request, "pages/dynamic-tables.html", context)
 
-def exit_enter_strategies(request):
-  context = {
-    'segment': 'exit_enter_strategies'
-  }
-  return render(request, "pages/exit-enter-strategies.html", context)
+
+def strategies(request):
+
+    return render(request, "pages/strategies.html")

@@ -10,6 +10,8 @@ from django.utils import timezone
 from home.models import BuyOrder
 from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
 from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
+from home.strategies.AwesomeStochBbSarEma200_3 import AwesomeStochBbSarEma200_3
+
 import threading
 
 
@@ -31,7 +33,7 @@ class Buy:
                 try:
                     buy_orders_without_sell = BuyOrder.objects.filter(strategy_id=self.strategy.id, time_frame_id=self.strategy_time.id,
                                                                       sellorder__isnull=True)
-                    if len(buy_orders_without_sell) >= 50:
+                    if len(buy_orders_without_sell) >= 10:
                         continue
                     else:
                         # find_buy_order = BuyOrder.objects.filter(

@@ -43,6 +43,7 @@ class Strategy(models.Model):
     created_at = models.DateTimeField(default=timezone.now())
     updated_at = models.DateTimeField(default=timezone.now())
     notes = models.TextField(blank=True, null=True)
+    is_running = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

@@ -54,7 +54,7 @@ class ExchangeConnector:
 
         while since < until:
             # Fetching OHLCV data in chunks due to Binance API limitations
-            candles = self.fetch_ohlcv(symbol, timeframe, since)
+            candles = self.fetch_ohlcv(symbol, timeframe, True, since)
             if not candles:
                 break
 
@@ -64,14 +64,17 @@ class ExchangeConnector:
 
         return ohlcv
 
-    def fetch_ohlcv(self, symbol, timeframe, since=1704461252000, limit=500):
+    def fetch_ohlcv(self, symbol, timeframe, since_flag=False, since=1704461252000, limit=500):
         # now = datetime.utcnow()
         # unixtime = calendar.timegm(now.utctimetuple())
         # since = (unixtime - 60*60) * 1000  # UTC timestamp in milliseconds
 
         # ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
         # sleep(0.1)
-        ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since)
+        if since_flag == True:
+            ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since)
+        else:
+            ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe)
         return ohlcv
 
     def fetch_balance(self):

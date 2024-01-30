@@ -6,7 +6,8 @@ class PopulateCoins():
     def getCoins(exchange):
 
         markets = exchange.fetch_markets()
-
+        execluded = ['BTCDOMUSDT', 'USDPUSDT',
+                     'DOWNUSDT''TUSDUSDT', 'USDCUSDT', 'UPUSDT']
         # Extract available trading pairs with USDT as the quote currency
         for market in markets:
             # Check if trading is allowed (you can buy and sell)
@@ -14,7 +15,7 @@ class PopulateCoins():
                 # Check if the quote currency is USDT
                 if market['info']['quoteAsset'].lower() == 'usdt':
                     symbol = market['info']['symbol']
-                    if symbol.find('DOWNUSDT') == -1 and symbol.find('UPUSDT') == -1 and symbol[-1].isdigit() == False:
+                    if not any(element in symbol for element in execluded) and symbol[-1].isdigit() == False:
                         symbol_exists = Coin.objects.filter(
                             symbol=symbol).exists()
 

@@ -37,6 +37,9 @@ class MyStrategy(bt.Strategy):
         self.stochastic = bt.indicators.Stochastic(
             self.data, period=self.params.stochastic_period)
 
+        self.bought = False
+        self.last_date = None
+
     def next(self):
 
         # elif self.buy_flag == 1:
@@ -55,10 +58,11 @@ class MyStrategy(bt.Strategy):
             # self.sell(size=self.last_executed_size)
             # Sell all to exit the position
             # self.order_target_percent(target=0)
-
             print('stop loss sell: ' + str(self.data.close[0]))
 
-        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and self.data.low < self.bbands.lines.bot and self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD:
+            # elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+            # elif self.bought == False and self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
             # self.order_target_value(target=self.broker.getvalue())
@@ -66,11 +70,12 @@ class MyStrategy(bt.Strategy):
             self.buy()
             self.stop_loss_price = self.data.close * \
                 (1 - (self.params.stop_loss_percent / 100))
-
+            self.bought = True
+            print(f"Buy at: {self.data.datetime.datetime(0)}")
             print('current price: ' + str(self.data.close[0]))
             print('stop loss : ' + str(self.stop_loss_price))
 
-        elif self.position.size > 0 and (self.data.close > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
+        elif self.position.size > 0 and (self.data.high > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
 
             # print('sell: ' + str(self.buy_flag) +
             #      ',' + str(self.data.close[0]))
@@ -78,10 +83,15 @@ class MyStrategy(bt.Strategy):
             #    self.sell(parent=self.last_buy_order)
             print('normal sell: ' + str(self.data.close[0]))
             self.sell()
+            print(f"sell at: {self.data.datetime.datetime(0)}")
+
             # if self.last_executed_order:
             # self.sell(size=self.last_executed_size)
             # Sell all to exit the position
             # self.order_target_percent(target=0)
+
+    def get_exit_date(self):
+        return self.exit_date  # Return the exit date
 
     def notify_order(self, order):
         # if order.status in [order.Submitted, order.Accepted]:
@@ -118,7 +128,8 @@ class MyStrategy(bt.Strategy):
                           order.executed.size,
                           order.executed.comm,
                           bt.num2date(order.executed.dt).strftime('%Y-%m-%d %H:%M:%S')))
-
+                self.last_date = bt.num2date(
+                    order.executed.dt).strftime('%Y-%m-%d')
             # elif order.exectype == bt.Order.Stop:
             #    print('STOP LOSS EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
             #          (order.executed.price,
@@ -155,6 +166,7 @@ class BacktestView:
 
         ohlcv = self.exchange.get_bulk_ohlcv(
             self.symbol, self.timeframe, self.start_date, self.end_date)
+
         # Convert ohlcv list to DataFrame
         df = pd.DataFrame(
             ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
@@ -187,6 +199,13 @@ class BacktestView:
 
             plt.savefig('backtest_plot.png')
             plt.show()
+        result = []
+        cash = cerebro.broker.getvalue()
+        strategy_instance = cerebro.runstrats[0][0]
+        last_date = 0 if strategy_instance.last_date is None else strategy_instance.last_date
 
-        return cerebro.broker.getvalue()
+        result.append(cash)
+        result.append(last_date)
+
+        return result
         # return 'Backtest completed successfully'
