@@ -18,15 +18,12 @@ class ExchangeConnector:
             # You can add other exchange-specific parameters here
         })
 
-    def fetch_trading_fees(self):
-        return self.exchange.fetch_trading_fees()
-
     def fetch_maker_fee(self):
-        fees = self.fetch_trading_fees()
+        fees = self.exchange.fetch_trading_fees()
         return fees.get('maker', 0)
 
     def fetch_taker_fee(self):
-        fees = self.fetch_trading_fees()
+        fees = self.exchange.fetch_trading_fees()
         return fees.get('taker', 0)
 
     def fetch_markets(self):

@@ -20,6 +20,7 @@ class MyStrategy(bt.Strategy):
         ("bbands_dev", 2),
         ("stochastic_period", 14),
         ("stochastic_d_period", 3),
+        ("atr_period", 14),
         ("stop_loss_percent", None),  # 1.0% stop-loss
 
     )
@@ -36,6 +37,8 @@ class MyStrategy(bt.Strategy):
             self.data.close, period=self.params.bbands_period, devfactor=self.params.bbands_dev)
         self.stochastic = bt.indicators.Stochastic(
             self.data, period=self.params.stochastic_period)
+        # self.atr = bt.indicators.AverageTrueRange(
+        #    period=self.params.atr_period)
 
         self.bought = False
         self.last_date = None
@@ -60,8 +63,9 @@ class MyStrategy(bt.Strategy):
             # self.order_target_percent(target=0)
             print('stop loss sell: ' + str(self.data.close[0]))
 
-        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and self.data.low < self.bbands.lines.bot and self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD:
-            # elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+        # elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
+
             # elif self.bought == False and self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
             # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
@@ -70,6 +74,10 @@ class MyStrategy(bt.Strategy):
             self.buy()
             self.stop_loss_price = self.data.close * \
                 (1 - (self.params.stop_loss_percent / 100))
+
+            # self.stop_loss_price = self.data.close[0] - \
+            #    (self.atr[0] * self.params.stop_loss_percent)
+
             self.bought = True
             print(f"Buy at: {self.data.datetime.datetime(0)}")
             print('current price: ' + str(self.data.close[0]))
@@ -152,7 +160,7 @@ class MyStrategy(bt.Strategy):
 
 
 class BacktestView:
-    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100, stop_loss_percent=1, plot=False):
+    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100, stop_loss_percent=1, maker_fee=None, taker_fee=None, plot=False):
         self.exchange = exchange
         self.symbol = symbol
         self.start_date = start_date
@@ -160,6 +168,8 @@ class BacktestView:
         self.timeframe = timeframe
         self.initial_balance = initial_balance
         self.stop_loss_percent = stop_loss_percent
+        # self.maker_fee = maker_fee
+        # self.taker_fee = taker_fee
         self.plot = plot
 
     def backtest(self):
@@ -187,7 +197,7 @@ class BacktestView:
             commission=0.001)
 
         cerebro.broker.set_cash(self.initial_balance)
-        cerebro.addsizer(bt.sizers.PercentSizer, percents=10)
+        cerebro.addsizer(bt.sizers.PercentSizer, percents=1)
 
         print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 

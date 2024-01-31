@@ -21,10 +21,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Change it according to your requirements
         # symbols = ['APE/USDT', 'SOL/USDT', 'DOT/USDT', 'MOVR/USDT']
-        symbols = Coin.objects.exclude(
-            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])[:50]
+        # symbols = Coin.objects.exclude(
+        #    symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])[:50]
 
-        # symbols = Coin.objects.filter(symbol__in=['DOTUSDT'])
+        symbols = Coin.objects.filter(symbol__in=['XRPUSDT'])
 
         timeframe = options['timeframe']  # Daily timeframe, change as needed
         stoploss = options['stopLoss']
@@ -35,19 +35,22 @@ class Command(BaseCommand):
         # start_date = '2023-01-01'  # Your start date // very bearish
         # end_date = '2024-01-28'    # Your end date
 
-        start_date = '2021-12-08'  # Your start date // very bearish
-        end_date = '2022-04-15'    # Your end date
+        # start_date = '2021-12-08'  # Your start date // very bearish
+        # end_date = '2022-04-15'    # Your end date
 
-        # start_date = '2024-01-01'  # Your start date // very bearish
-        # end_date = '2024-01-20'    # Your end date
+        start_date = '2024-01-01'  # Your start date // very bearish
+        end_date = '2024-01-28'    # Your end date
 
         exchange = ExchangeConnector('binance')
         initial_balance = 1000
+        # maker_fee = exchange.fetch_maker_fee()
+        # taker_fee = exchange.fetch_taker_fee()
+
         for symbol in symbols:
             # try:
             print('symbol: ' + symbol.symbol)
             backtest_view = BacktestView(
-                exchange, symbol.symbol, start_date, end_date, timeframe, initial_balance, stoploss, False)
+                exchange, symbol.symbol, start_date, end_date, timeframe, initial_balance, stoploss, plot=False)
             result = backtest_view.backtest()
             initial_balance = result[0]
             last_date = result[1]
