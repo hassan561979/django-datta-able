@@ -25,6 +25,7 @@ class Coin(models.Model):
     status = models.BooleanField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now())
     updated_at = models.DateTimeField(default=timezone.now())
+    strategy_profit = models.JSONField(null=True)
 
     def __str__(self):
         return self.symbol

@@ -1,8 +1,10 @@
 import ccxt
 import os
 import calendar
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
+from django.utils import timezone
+import pytz
 
 
 class ExchangeConnector:
@@ -45,20 +47,32 @@ class ExchangeConnector:
     def get_bulk_ohlcv(self, symbol, timeframe, start_date, end_date):
         ohlcv = []
 
-        since = int(datetime.strptime(
-            start_date, '%Y-%m-%d').timestamp()) * 1000
-        until = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp()) * 1000
+        since_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+        since_timezone = timezone.make_aware(
+            since_datetime, timezone.get_default_timezone())
+        since = int(since_timezone.timestamp() * 1000)
+
+        until_datetime = datetime.strptime(
+            end_date, '%Y-%m-%d')
+        until_timezone = timezone.make_aware(
+            until_datetime, timezone.get_default_timezone())
+
+        until = int(until_timezone.timestamp() * 1000)
 
         while since < until:
             # Fetching OHLCV data in chunks due to Binance API limitations
-            candles = self.fetch_ohlcv(symbol, timeframe, True, since)
+            candles = self.fetch_ohlcv(symbol, timeframe, True, since, 48)
             if not candles:
                 break
 
             ohlcv.extend(candles)
             since = candles[-1][0] + 1
-            sleep(0.1)
+            # print(since)
+            # os.abort()
+            # sleep(0.1)
 
+        # print(ohlcv)
+        # os.abort()
         return ohlcv
 
     def fetch_ohlcv(self, symbol, timeframe, since_flag=False, since=1704461252000, limit=500):
@@ -69,7 +83,7 @@ class ExchangeConnector:
         # ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
         # sleep(0.1)
         if since_flag == True:
-            ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since)
+            ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
         else:
             ohlcv = self.exchange.fetch_ohlcv(symbol, timeframe)
         return ohlcv

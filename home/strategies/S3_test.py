@@ -44,7 +44,7 @@ class MyStrategy(bt.Strategy):
         self.last_date = None
 
     def next(self):
-
+        # print(f"data date: {self.data.datetime.datetime(0)}")
         # elif self.buy_flag == 1:
         #    if self.data.close <= self.stop_loss:
         #        self.buy_flag = 0
@@ -57,7 +57,7 @@ class MyStrategy(bt.Strategy):
             # Place a stop-loss order
             # if self.last_buy_order:
             #    self.sell(parent=self.last_buy_order)
-            self.sell()
+            self.close()
             # self.sell(size=self.last_executed_size)
             # Sell all to exit the position
             # self.order_target_percent(target=0)
@@ -71,7 +71,14 @@ class MyStrategy(bt.Strategy):
             # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
             # self.order_target_value(target=self.broker.getvalue())
             # self.order_target_percent(target=100)
-            self.buy()
+
+            current_close_price = self.data.close[0]
+
+            quantity = 100 / current_close_price
+            print('Calculated Quantity:', quantity)
+            # Buy signal with specified quantity
+            self.buy(size=quantity)
+
             self.stop_loss_price = self.data.close * \
                 (1 - (self.params.stop_loss_percent / 100))
 
@@ -90,7 +97,7 @@ class MyStrategy(bt.Strategy):
             # if self.last_buy_order:
             #    self.sell(parent=self.last_buy_order)
             print('normal sell: ' + str(self.data.close[0]))
-            self.sell()
+            self.close()
             print(f"sell at: {self.data.datetime.datetime(0)}")
 
             # if self.last_executed_order:
@@ -159,6 +166,15 @@ class MyStrategy(bt.Strategy):
         print('==================================================')
 
 
+class FixedCashSizer(bt.Sizer):
+    params = (
+        ("cash", 100),  # Fixed cash amount for each order
+    )
+
+    def _getsizing(self, comminfo, cash, isbuy, data):
+        return self.params.cash
+
+
 class BacktestView:
     def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100, stop_loss_percent=1, maker_fee=None, taker_fee=None, plot=False):
         self.exchange = exchange
@@ -197,7 +213,8 @@ class BacktestView:
             commission=0.001)
 
         cerebro.broker.set_cash(self.initial_balance)
-        cerebro.addsizer(bt.sizers.PercentSizer, percents=1)
+        # cerebro.addsizer(bt.sizers.PercentSizer, percents=100)
+        # cerebro.addsizer(FixedCashSizer)
 
         print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
