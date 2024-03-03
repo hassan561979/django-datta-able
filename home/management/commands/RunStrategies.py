@@ -15,28 +15,32 @@ from home.ParallelTaskRunner import ParallelTaskRunner
 class Command(BaseCommand):
     help = 'run strategies'
 
+    def add_arguments(self, parser):
+        parser.add_argument('strategy_name', type=str)
+
     def handle(self, *args, **options):
 
         # exchange = ExchangeConnector("binance")
         # sell = Sell(exchange)
         # sell.doSell()
-
+        strategy_name = options['strategy_name']
         exchange = ExchangeConnector("binance")
 
         # xx = threading.Thread(target=sell.doSell)
         # xx.start()
 
-        strategies = Strategy.objects.filter(status=1)
+        strategy = Strategy.objects.get(name=strategy_name, status=1)
+
         PopulateCoins.getCoins(exchange)
         coins = Coin.objects.all()
 
-        for strategy in strategies:
+        # for strategy in strategies:
 
-            for strategy_time in strategy.strategy_times.filter(status=1):
-                buy_obj = Buy(strategy, strategy_time,
-                              coins, exchange)
-                x = threading.Thread(target=buy_obj.doBuy)
-                x.start()
+        for strategy_time in strategy.strategy_times.filter(status=1):
+            buy_obj = Buy(strategy, strategy_time,
+                          coins, exchange)
+            x = threading.Thread(target=buy_obj.doBuy)
+            x.start()
 
         sell = SellTest(exchange)
         sell.doSell()

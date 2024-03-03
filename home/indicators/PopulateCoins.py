@@ -8,8 +8,10 @@ class PopulateCoins():
         markets = exchange.fetch_markets()
         execluded = ['BTCDOMUSDT', 'USDPUSDT',
                      'DOWNUSDT''TUSDUSDT', 'USDCUSDT', 'UPUSDT']
+        min_market_cap = 50000000  # $50 million
         # Extract available trading pairs with USDT as the quote currency
         for market in markets:
+
             # Check if trading is allowed (you can buy and sell)
             if market['info'].get('status', '').lower() == 'trading':
                 # Check if the quote currency is USDT

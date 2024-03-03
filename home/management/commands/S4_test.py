@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from home.ExchangeConnector import ExchangeConnector
-from home.strategies.S3_test import BacktestView
+from home.strategies.S4_test import BacktestView
 from home.models import Coin
 import os
 import traceback
@@ -22,6 +22,7 @@ class Command(BaseCommand):
                             help='stop loss')
 
     def handle(self, *args, **options):
+
         fear_greed_api_url = f'https://api.alternative.me/fng/?limit=0'
         response = requests.get(fear_greed_api_url)
         FearGreedDf = pd.DataFrame(response.json()['data'])
@@ -29,14 +30,15 @@ class Command(BaseCommand):
         FearGreedDf.set_index('timestamp', inplace=True)
 
         # Change it according to your requirements
-        # symbols = ['APE/USDT', 'SOL/USDT', 'DOT/USDT', 'MOVR/USDT']
-        symbols = Coin.objects.exclude(
-            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])[:50]
+        # symbols = ['APEUSDT', 'SOLUSDT', 'DOTUSDT', 'MOVRUSDT',
+        #           'XRPUSDT', 'LINKUSDT', 'ETHUSDT', 'ADAUSDT', 'DOGEUSDT', 'XLMUSDT']
 
+        symbols = Coin.objects.exclude(
+            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT']).order_by('?')[:50]
+
+        # symbols = Coin.objects.filter(symbol__in=['LPTUSDT'])
         # symbols = Coin.objects.filter(symbol__in=['OAXUSDT', 'ATMUSDT', 'OOKIUSDT', 'DREPUSDT', 'LPTUSDT', 'APEUSDT', 'SOLUSDT', 'DOTUSDT', 'MOVRUSDT',
         #                                          'XRPUSDT', 'LINKUSDT', 'ADAUSDT', 'DOGEUSDT', 'XLMUSDT'])
-
-        # symbols = Coin.objects.filter(symbol__in=['XRPUSDT'])
 
         timeframe = options['timeframe']  # Daily timeframe, change as needed
         stoploss = options['stopLoss']
@@ -50,8 +52,12 @@ class Command(BaseCommand):
         # start_date = '2021-12-08'  # Your start date // very bearish
         # end_date = '2022-04-15'    # Your end date
 
-        start_date = '2023-10-25'  # Your start date // very bearish
-        end_date = '2023-12-30'    # Your end date
+        # start_date = '2023-03-18'  # Your start date // very bearish
+        # end_date = '2023-04-18'    # Your end date
+
+        start_date = '2023-11-01'  # Your start date // very bearish
+        end_date = '2024-01-10'    # Your end date
+        # end_date = '2023-12-25'    # Your end date
 
         # start_date = '2021-12-20'  # Your start date // very bearish
         # end_date = '2021-12-25'    # Your end date
@@ -73,6 +79,7 @@ class Command(BaseCommand):
                     symbol_obj = Coin.objects.filter(symbol=symbol).first()
                     profit_percent = symbol_obj.strategy_profit['S1']
                     print('profit percent: ' + str(profit_percent))
+
                     # if profit_percent < 20:
                     #    continue
 
@@ -108,14 +115,7 @@ class Command(BaseCommand):
         #      str(stoploss) + ',final profit : ' + str(initial_balance))
 
 
-# 50 coin
-#    params = (
-#        ("ema_period", 200),
-#        ("psar_af", 0.02),
-#        ("psar_max_af", 0.02),
-#        ("bbands_period", 10),
-#        ("bbands_dev", 2),
-#        ("stochastic_period", 14),
-#        ("stochastic_d_period", 3),
-#        ("atr_period", 14),
-#        ("stop_loss_percent", None),  # 1.0% stop-loss
+# https://www.youtube.com/watch?v=r8pU-8l1KPU
+
+# fear greed index       profit
+        #   65      2548.4   949

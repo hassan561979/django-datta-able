@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from home.ExchangeConnector import ExchangeConnector
-from home.strategies.S3_test import BacktestView
+from home.strategies.S5_test import BacktestView
 from home.models import Coin
 import os
 import traceback
@@ -31,12 +31,12 @@ class Command(BaseCommand):
         # Change it according to your requirements
         # symbols = ['APE/USDT', 'SOL/USDT', 'DOT/USDT', 'MOVR/USDT']
         symbols = Coin.objects.exclude(
-            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])[:50]
+            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT']).order_by('?')[:20]
 
         # symbols = Coin.objects.filter(symbol__in=['OAXUSDT', 'ATMUSDT', 'OOKIUSDT', 'DREPUSDT', 'LPTUSDT', 'APEUSDT', 'SOLUSDT', 'DOTUSDT', 'MOVRUSDT',
         #                                          'XRPUSDT', 'LINKUSDT', 'ADAUSDT', 'DOGEUSDT', 'XLMUSDT'])
 
-        # symbols = Coin.objects.filter(symbol__in=['XRPUSDT'])
+        # symbols = Coin.objects.filter(symbol__in=['SOLUSDT'])
 
         timeframe = options['timeframe']  # Daily timeframe, change as needed
         stoploss = options['stopLoss']
@@ -51,7 +51,7 @@ class Command(BaseCommand):
         # end_date = '2022-04-15'    # Your end date
 
         start_date = '2023-10-25'  # Your start date // very bearish
-        end_date = '2023-12-30'    # Your end date
+        end_date = '2024-02-14'    # Your end date
 
         # start_date = '2021-12-20'  # Your start date // very bearish
         # end_date = '2021-12-25'    # Your end date
@@ -60,7 +60,7 @@ class Command(BaseCommand):
         # end_date = '2023-03-01'    # Your end date
 
         exchange = ExchangeConnector('binance')
-        initial_balance = 500
+        initial_balance = 110
         # maker_fee = exchange.fetch_maker_fee()
         # taker_fee = exchange.fetch_taker_fee()
         profit_history = False
@@ -70,14 +70,16 @@ class Command(BaseCommand):
                 print('-------------------------------' + 'symbol: ' +
                       symbol.symbol + '--------------------------')
                 if profit_history == False:
-                    symbol_obj = Coin.objects.filter(symbol=symbol).first()
-                    profit_percent = symbol_obj.strategy_profit['S1']
+                    # symbol_obj = Coin.objects.filter(symbol=symbol).first()
+                    # profit_percent = symbol_obj.strategy_profit['S1']
+                    profit_percent = 0
                     print('profit percent: ' + str(profit_percent))
                     # if profit_percent < 20:
                     #    continue
 
                 backtest_view = BacktestView(
-                    exchange, symbol.symbol, start_date, end_date, timeframe, initial_balance, stoploss, plot=False, FearGreedDf=FearGreedDf)
+                    exchange, symbol.symbol,
+                    start_date, end_date, timeframe, initial_balance, stoploss, plot=False, FearGreedDf=FearGreedDf)
                 result = backtest_view.backtest()
                 profit = result[0]
 
@@ -92,7 +94,7 @@ class Command(BaseCommand):
                 last_date = result[1]
                 # start_date = start_date if last_date == 0 else last_date
 
-                print('last date: ' + str(last_date) + ',time frame: ' + timeframe + ',stop loss: ' +
+                print('S5 last date: ' + str(last_date) + ',time frame: ' + timeframe + ',stop loss: ' +
                       str(stoploss) + ',profit : ' + str(profit))
             except Exception as e:
                 print(e)

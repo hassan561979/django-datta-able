@@ -25,6 +25,11 @@ class MyStrategy(bt.Strategy):
         ("atr_period", 14),
         ("stop_loss_percent", None),  # 1.0% stop-loss
         ("FearGreedDf", None),
+        ("rsi_threshold", 50),
+        ("rsi_period", 14),
+        ("atr_period", 14),  # Adjust ATR period as needed
+        ("volatility_threshold", 0.1),  # Set the volatility threshold to 50%
+
 
     )
 
@@ -34,16 +39,23 @@ class MyStrategy(bt.Strategy):
         self.buy_flag = 0
         self.ema = bt.indicators.ExponentialMovingAverage(
             self.data.close, period=self.params.ema_period)
-        self.psar = bt.indicators.ParabolicSAR(
-            self.data, af=self.params.psar_af, afmax=self.params.psar_max_af)
+        # self.psar = bt.indicators.ParabolicSAR(
+        #    self.data, af=self.params.psar_af, afmax=self.params.psar_max_af)
         self.bbands = bt.indicators.BollingerBands(
             self.data.close, period=self.params.bbands_period, devfactor=self.params.bbands_dev)
-        self.stochastic = bt.indicators.Stochastic(
-            self.data, period=self.params.stochastic_period)
+        # self.stochastic = bt.indicators.Stochastic(
+        #    self.data, period=self.params.stochastic_period)
         # self.rvi = RVIndicatorTest()
         # self.atr = bt.indicators.AverageTrueRange(
         #    period=self.params.atr_period)
-        # self.rvi = ta.rvi(close=self.data.close, length=self.params.rvi_period)
+        # self.rsi = bt.indicators.RelativeStrengthIndex(
+        #    period=self.params.rsi_period
+        # )
+
+        # Add ATR indicator
+        # self.atr = bt.indicators.AverageTrueRange(
+        #    period=self.params.atr_period)
+
         self.bought = False
         self.last_date = None
 
@@ -53,33 +65,27 @@ class MyStrategy(bt.Strategy):
         fear_greed_value = int(self.params.FearGreedDf.loc[data_date]['value'])
         if fear_greed_value < 65:
             return
-        # print(f"data date: {self.data.datetime.datetime(0)}")
-        # elif self.buy_flag == 1:
-        #    if self.data.close <= self.stop_loss:
-        #        self.buy_flag = 0
 
-        #       # print('sell stop loss: ' + str(self.stop_loss))
-        #       self.sell()
-        # print(self.position.size)
+        prev_close = self.data.close[-1]
+        prev_open = self.data.open[-1]
+        current_close = self.data.close
+        current_open = self.data.open
+
+        # Get the current volatility (ATR)
+        # current_volatility = self.atr.lines.atr[0]
+        # print('current volatility:' + str(current_volatility))
+        # print('coin volatility:' +
+        #      str(self.params.volatility_threshold * self.data.close))
 
         if self.position.size > 0 and self.data.close <= self.stop_loss_price:
-            # Place a stop-loss order
-            # if self.last_buy_order:
-            #    self.sell(parent=self.last_buy_order)
+
             self.close()
-            # self.sell(size=self.last_executed_size)
-            # Sell all to exit the position
-            # self.order_target_percent(target=0)
+
             print('stop loss sell: ' + str(self.data.close[0]))
 
-        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and self.data.low < self.bbands.lines.bot and self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD:
-
-            # elif self.bought == False and self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
-            # self.order_target_value(target=self.broker.getvalue())
-            # self.order_target_percent(target=100)
+        elif (self.position.size <= 0 and self.data.low > self.ema
+              and prev_close < self.bbands.lines.bot[-1]
+              and current_close > current_open):
 
             self.buy()
 
@@ -95,7 +101,9 @@ class MyStrategy(bt.Strategy):
             print('current price: ' + str(self.data.close[0]))
             print('stop loss : ' + str(self.stop_loss_price))
 
-        elif self.position.size > 0 and (self.data.high > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
+        # elif (self.position.size > 0 and self.rsi.lines.rsi > self.params.rsi_threshold):
+        elif (self.position.size > 0
+              and self.data.high > self.bbands.lines.top):
 
             # print('sell: ' + str(self.buy_flag) +
             #      ',' + str(self.data.close[0]))
@@ -216,7 +224,10 @@ class BacktestView:
 
         print('Ending Portfolio Value: %.2f' % cerebro.broker.getvalue())
         if self.plot == True:
-            cerebro.plot(style='candlestick', volume=False)
+            colors = ['g' if close_price >= open_price else 'r' for open_price,
+                      close_price in zip(data.open, data.close)]
+            cerebro.plot(style='candlestick', volume=False,
+                         plotkwargs=dict(candleColors=colors))
 
             plt.savefig('backtest_plot.png')
             plt.show()
@@ -229,4 +240,4 @@ class BacktestView:
         result.append(last_date)
 
         return result
-        # return 'Backtest completed successfully'
+

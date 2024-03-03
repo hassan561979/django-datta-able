@@ -20,6 +20,18 @@ class ExchangeConnector:
             # You can add other exchange-specific parameters here
         })
 
+        self.time_frame_limit = {"1m": 1440,
+                                 "3m": 480,
+                                 "5m": 288,
+                                 "15m": 96,
+                                 "30m": 48,
+                                 "1h": 24,
+                                 "2h": 12,
+                                 "4h": 6,
+                                 "6h": 4,
+                                 "12h": 2,
+                                 "1d": 1}
+
     def fetch_maker_fee(self):
         fees = self.exchange.fetch_trading_fees()
         return fees.get('maker', 0)
@@ -44,6 +56,10 @@ class ExchangeConnector:
         # sleep(0.1)
         return self.exchange.fetch_ticker(symbol)
 
+    def getCandlesNumbersByFrame(self, time_frame):
+        frame_value = self.time_frame_limit[time_frame]
+        return frame_value
+
     def get_bulk_ohlcv(self, symbol, timeframe, start_date, end_date):
         ohlcv = []
 
@@ -58,10 +74,12 @@ class ExchangeConnector:
             until_datetime, timezone.get_default_timezone())
 
         until = int(until_timezone.timestamp() * 1000)
+        number_of_candles = self.getCandlesNumbersByFrame(timeframe)
 
         while since < until:
             # Fetching OHLCV data in chunks due to Binance API limitations
-            candles = self.fetch_ohlcv(symbol, timeframe, True, since, 48)
+            candles = self.fetch_ohlcv(
+                symbol, timeframe, True, since, number_of_candles)
             if not candles:
                 break
 

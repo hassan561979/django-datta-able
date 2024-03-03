@@ -139,7 +139,7 @@ if DB_ENGINE and DB_NAME and DB_USERNAME:
             'PASSWORD': DB_PASS,
             'HOST': DB_HOST,
             'PORT': DB_PORT,
-            'max_connections ': 10000,
+            'max_connections ': 10000
         },
     }
 else:
@@ -175,8 +175,8 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = "en-us"
 USE_TZ = True
 
-TIME_ZONE = 'UTC'
-
+#TIME_ZONE = 'UTC+3'
+TIME_ZONE = 'Asia/Riyadh'
 USE_I18N = True
 
 

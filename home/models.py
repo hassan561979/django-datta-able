@@ -26,6 +26,7 @@ class Coin(models.Model):
     created_at = models.DateTimeField(default=timezone.now())
     updated_at = models.DateTimeField(default=timezone.now())
     strategy_profit = models.JSONField(null=True)
+    market_cap = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return self.symbol
@@ -84,7 +85,7 @@ class BuyOrder(models.Model):
     buy_price = models.FloatField()
     buy_amount = models.FloatField()
     buy_total = models.FloatField()
-    indicators = models.CharField(max_length=255, blank=True, null=True)
+    indicators = models.CharField(max_length=1000, blank=True, null=True)
     buy_created_at = models.DateTimeField(default=timezone.now())
     buy_updated_at = models.DateTimeField(default=timezone.now())
 
@@ -111,7 +112,7 @@ class SellOrder(models.Model):
     sell_amount = models.FloatField()
     sell_total = models.FloatField()
     profit = models.FloatField()
-    indicators = models.CharField(max_length=255, blank=True, null=True)
+    indicators = models.CharField(max_length=1000, blank=True, null=True)
     sell_created_at = models.DateTimeField(default=timezone.now())
     sell_updated_at = models.DateTimeField(default=timezone.now())
 

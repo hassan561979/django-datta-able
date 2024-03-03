@@ -11,8 +11,9 @@ from home.models import BuyOrder
 from home.strategies.AwesomeStochBbSarEma200 import AwesomeStochBbSarEma200
 from home.strategies.AwesomeStochBbSarEma200_2 import AwesomeStochBbSarEma200_2
 from home.strategies.AwesomeStochBbSarEma200_3 import AwesomeStochBbSarEma200_3
-
+from home.Util import fetch_current_fear_greed
 import threading
+from home.strategies.S10 import S10
 
 
 class Buy:
@@ -25,15 +26,22 @@ class Buy:
     def doBuy(self) -> None:
         dynamic_class = globals()[self.strategy.function_name]
         while True:
-            print('loop start' + ':' + str(datetime.now()) + ':' +
+            print('loop start' + ': ' + str(datetime.now()) + ': ' +
                   self.strategy.function_name + ' : ' + self.strategy_time.time_frame)
             print('====================================================')
 
             for coin in self.coins:
                 try:
+                    # current_fear_greed_df = fetch_current_fear_greed()
+                    # fear_and_greed_value = int(
+                    #    current_fear_greed_df['value'].iloc[0])
+
+                    # if fear_and_greed_value < 65:
+                    #    continue
+
                     buy_orders_without_sell = BuyOrder.objects.filter(strategy_id=self.strategy.id, time_frame_id=self.strategy_time.id,
                                                                       sellorder__isnull=True)
-                    if len(buy_orders_without_sell) >= 10:
+                    if len(buy_orders_without_sell) >= 11:
                         continue
                     else:
                         # find_buy_order = BuyOrder.objects.filter(
@@ -72,6 +80,7 @@ class Buy:
 
             signal = strategy_obj.get_signals()
             if signal['signal'] == 1:
+                print('found buy')
                 BuyOrderService(
                     self.strategy, self.strategy_time, coin, self.exchange, signal)
 

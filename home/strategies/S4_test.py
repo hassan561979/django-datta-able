@@ -6,46 +6,49 @@ import backtrader as bt
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
-from home.indicators.RVIndicatorTest import RVIndicatorTest
 
 from backtrader import Cerebro
-import requests
 
 
 class MyStrategy(bt.Strategy):
 
     params = (
         ("ema_period", 200),
-        ("psar_af", 0.02),
-        ("psar_max_af", 0.2),
-        ("bbands_period", 10),
-        ("bbands_dev", 2),
         ("stochastic_period", 14),
-        ("stochastic_d_period", 3),
-        ("atr_period", 14),
-        ("stop_loss_percent", None),  # 1.0% stop-loss
+        ("rsi_period", 14),
+        ("macd_fast", 12),
+        ("macd_slow", 26),
+        ("macd_signal", 9),
+        ("buy_stochastic_threshold", 20),
+        ("sell_stochastic_threshold", 80),
+        ("rsi_threshold", 50),
+        ("macd_hist_threshold", 0),
+        ("stop_loss_percent", None),
         ("FearGreedDf", None),
-
     )
 
     def __init__(self):
         self.stop_loss_percent = self.params.stop_loss_percent
-        self.last_executed_size = 0
         self.buy_flag = 0
         self.ema = bt.indicators.ExponentialMovingAverage(
             self.data.close, period=self.params.ema_period)
-        self.psar = bt.indicators.ParabolicSAR(
-            self.data, af=self.params.psar_af, afmax=self.params.psar_max_af)
-        self.bbands = bt.indicators.BollingerBands(
-            self.data.close, period=self.params.bbands_period, devfactor=self.params.bbands_dev)
         self.stochastic = bt.indicators.Stochastic(
-            self.data, period=self.params.stochastic_period)
-        # self.rvi = RVIndicatorTest()
-        # self.atr = bt.indicators.AverageTrueRange(
-        #    period=self.params.atr_period)
-        # self.rvi = ta.rvi(close=self.data.close, length=self.params.rvi_period)
+            self.data,
+            period=self.params.stochastic_period
+        )
+        self.rsi = bt.indicators.RelativeStrengthIndex(
+            period=self.params.rsi_period
+        )
+        self.macd = bt.indicators.MACDHisto(
+            self.data.close,
+            period_me1=self.params.macd_fast,
+            period_me2=self.params.macd_slow,
+            period_signal=self.params.macd_signal,
+        )
+
         self.bought = False
         self.last_date = None
+        # API endpoint for Fear and Greed Index
 
     def next(self):
         data_date = self.data.datetime.datetime(0).date().strftime('%Y-%m-%d')
@@ -72,14 +75,16 @@ class MyStrategy(bt.Strategy):
             # self.order_target_percent(target=0)
             print('stop loss sell: ' + str(self.data.close[0]))
 
-        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and self.data.low < self.bbands.lines.bot and self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD:
-
-            # elif self.bought == False and self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
-            # self.order_target_value(target=self.broker.getvalue())
-            # self.order_target_percent(target=100)
+        elif (self.position.size <= 0
+              # and self.data.low > self.ema
+              and self.stochastic.lines.percK[-5] < self.params.buy_stochastic_threshold
+              and self.stochastic.lines.percD[-5] < self.params.buy_stochastic_threshold
+              and self.stochastic.lines.percK > self.params.buy_stochastic_threshold
+              and self.stochastic.lines.percK < self.params.sell_stochastic_threshold
+              and self.stochastic.lines.percD > self.params.buy_stochastic_threshold
+              and self.stochastic.lines.percD < self.params.sell_stochastic_threshold
+              and self.rsi.lines.rsi > self.params.rsi_threshold
+              and self.macd.lines.histo > self.params.macd_hist_threshold):
 
             self.buy()
 
@@ -95,7 +100,20 @@ class MyStrategy(bt.Strategy):
             print('current price: ' + str(self.data.close[0]))
             print('stop loss : ' + str(self.stop_loss_price))
 
-        elif self.position.size > 0 and (self.data.high > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
+        # elif (self.position.size > 0
+        #      and self.stochastic.lines.percK > self.params.sell_stochastic_threshold
+        #      and self.stochastic.lines.percD > self.params.sell_stochastic_threshold
+        #      and self.stochastic.lines.percK < self.stochastic.lines.percD):
+            # or self.macd.lines.histo < self.params.macd_hist_threshold):
+        elif (self.position.size > 0
+              and self.stochastic.lines.percK[-5] > self.params.sell_stochastic_threshold
+              and self.stochastic.lines.percD[-5] > self.params.sell_stochastic_threshold
+              and self.stochastic.lines.percK > self.params.buy_stochastic_threshold
+              and self.stochastic.lines.percK < self.params.sell_stochastic_threshold
+              and self.stochastic.lines.percD > self.params.buy_stochastic_threshold
+              and self.stochastic.lines.percD < self.params.sell_stochastic_threshold
+              and self.rsi.lines.rsi < self.params.rsi_threshold
+              and self.macd.lines.histo < self.params.macd_hist_threshold):
 
             # print('sell: ' + str(self.buy_flag) +
             #      ',' + str(self.data.close[0]))

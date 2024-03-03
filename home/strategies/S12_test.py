@@ -10,6 +10,7 @@ from home.indicators.RVIndicatorTest import RVIndicatorTest
 
 from backtrader import Cerebro
 import requests
+import numpy as np
 
 
 class MyStrategy(bt.Strategy):
@@ -18,34 +19,75 @@ class MyStrategy(bt.Strategy):
         ("ema_period", 200),
         ("psar_af", 0.02),
         ("psar_max_af", 0.2),
-        ("bbands_period", 10),
+        ("bbands_period", 20),
         ("bbands_dev", 2),
         ("stochastic_period", 14),
         ("stochastic_d_period", 3),
         ("atr_period", 14),
-        ("stop_loss_percent", None),  # 1.0% stop-loss
         ("FearGreedDf", None),
+        ("rsi_threshold", 50),
+        ("rsi_period", 14),
+        ("atr_period", 14),  # Adjust ATR period as needed
+        ("atr_multiplier", 4),
+        ("volatility_threshold", 0.1),  # Set the volatility threshold to 50%
+        ("stoploss", None),
 
     )
 
     def __init__(self):
-        self.stop_loss_percent = self.params.stop_loss_percent
+        self.stoploss = self.params.stoploss
         self.last_executed_size = 0
         self.buy_flag = 0
         self.ema = bt.indicators.ExponentialMovingAverage(
             self.data.close, period=self.params.ema_period)
-        self.psar = bt.indicators.ParabolicSAR(
-            self.data, af=self.params.psar_af, afmax=self.params.psar_max_af)
+        # self.psar = bt.indicators.ParabolicSAR(
+        #    self.data, af=self.params.psar_af, afmax=self.params.psar_max_af)
         self.bbands = bt.indicators.BollingerBands(
             self.data.close, period=self.params.bbands_period, devfactor=self.params.bbands_dev)
         self.stochastic = bt.indicators.Stochastic(
             self.data, period=self.params.stochastic_period)
         # self.rvi = RVIndicatorTest()
+        self.atr = bt.indicators.AverageTrueRange(
+            period=self.params.atr_period)
+        # self.rsi = bt.indicators.RelativeStrengthIndex(
+        #    period=self.params.rsi_period
+        # )
+
+        # Add ATR indicator
         # self.atr = bt.indicators.AverageTrueRange(
         #    period=self.params.atr_period)
-        # self.rvi = ta.rvi(close=self.data.close, length=self.params.rvi_period)
+
         self.bought = False
         self.last_date = None
+
+    def checkBullishPattern(self):
+        # Check for famous bullish candlestick patterns
+        bullish_patterns = [
+            'CDLHAMMER', 'CDLINVERTEDHAMMER', 'CDLBULLISHENGULFING',
+            'CDLBULLISHHARAMI', 'CDLTWEETOP', 'CDLHANGINGMAN',
+            # Add more patterns as needed
+        ]
+
+        for pattern in bullish_patterns:
+            if self.data.ta.cdl_pattern(pattern)[-1] == 100:
+                return True
+
+        return False
+
+    def checkVolatility(self):
+        atr_value = self.atr.lines.atr
+        historical_atr_values = self.atr.lines.atr.get(
+            size=self.params.atr_period)
+
+        # Calculate a threshold based on a multiplier
+        volatility_threshold_multiplier = 1.0  # Adjust as needed
+        volatility_threshold = volatility_threshold_multiplier * \
+            np.mean(historical_atr_values)
+
+        if atr_value > volatility_threshold:
+            return True
+        else:
+            return False
 
     def next(self):
         data_date = self.data.datetime.datetime(0).date().strftime('%Y-%m-%d')
@@ -53,41 +95,31 @@ class MyStrategy(bt.Strategy):
         fear_greed_value = int(self.params.FearGreedDf.loc[data_date]['value'])
         if fear_greed_value < 65:
             return
-        # print(f"data date: {self.data.datetime.datetime(0)}")
-        # elif self.buy_flag == 1:
-        #    if self.data.close <= self.stop_loss:
-        #        self.buy_flag = 0
 
-        #       # print('sell stop loss: ' + str(self.stop_loss))
-        #       self.sell()
-        # print(self.position.size)
+        prev_close = self.data.close[-1]
+        prev_open = self.data.open[-1]
+        current_high = self.data.high
+        current_open = self.data.open
 
-        if self.position.size > 0 and self.data.close <= self.stop_loss_price:
-            # Place a stop-loss order
-            # if self.last_buy_order:
-            #    self.sell(parent=self.last_buy_order)
+        if (self.position.size > 0 and self.data.close <= self.stop_loss_price):
+
             self.close()
-            # self.sell(size=self.last_executed_size)
-            # Sell all to exit the position
-            # self.order_target_percent(target=0)
+
             print('stop loss sell: ' + str(self.data.close[0]))
 
-        elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.low < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # elif self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and self.data.low < self.bbands.lines.bot and self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD:
-
-            # elif self.bought == False and self.position.size <= 0 and self.data.low > self.ema and self.data.low > self.psar and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # elif self.position.size <= 0 and (self.data.close < self.bbands.lines.bot or (self.stochastic.lines.percK < 20 and self.stochastic.lines.percK > self.stochastic.lines.percD)):
-            # if self.position.size <= 0 and self.data.close < self.bbands.lines.bot:
-            # self.order_target_value(target=self.broker.getvalue())
-            # self.order_target_percent(target=100)
+        # elif (self.position.size <= 0 and self.data.low > self.ema
+        elif (self.position.size <= 0 and self.data.low > self.ema
+              and prev_close < self.bbands.lines.bot[-1]
+              and self.stochastic.lines.percK > self.stochastic.lines.percD):
 
             self.buy()
 
-            self.stop_loss_price = self.data.close * \
-                (1 - (self.params.stop_loss_percent / 100))
+            # Calculate the ATR value
+            atr_value = self.atr.lines.atr
 
-            # self.stop_loss_price = self.data.close[0] - \
-            #    (self.atr[0] * self.params.stop_loss_percent)
+            # Calculate the stop-loss price using ATR multiplier
+            self.stop_loss_price = self.data.close - \
+                (self.stoploss * atr_value)
 
             self.bought = True
             print(f"fear greed index: {fear_greed_value}")
@@ -95,7 +127,9 @@ class MyStrategy(bt.Strategy):
             print('current price: ' + str(self.data.close[0]))
             print('stop loss : ' + str(self.stop_loss_price))
 
-        elif self.position.size > 0 and (self.data.high > self.bbands.lines.top or (self.stochastic.lines.percK < self.stochastic.lines.percD and self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80)):
+        # elif (self.position.size > 0 and self.rsi.lines.rsi > self.params.rsi_threshold):
+        elif self.position.size > 0 and (self.data.high > self.bbands.lines.top
+                                         or (self.stochastic.lines.percK > 80 and self.stochastic.lines.percD > 80 and self.stochastic.lines.percK < self.stochastic.lines.percD)):
 
             # print('sell: ' + str(self.buy_flag) +
             #      ',' + str(self.data.close[0]))
@@ -169,14 +203,14 @@ class MyStrategy(bt.Strategy):
 
 
 class BacktestView:
-    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', initial_balance=100, stop_loss_percent=1, maker_fee=None, taker_fee=None, plot=False, FearGreedDf=None):
+    def __init__(self, exchange='binance', symbol='DOT/USDT', start_date='2024-01-01', end_date='2024-01-17', timeframe='30m', stoploss=4, initial_balance=100, maker_fee=None, taker_fee=None, plot=False, FearGreedDf=None):
         self.exchange = exchange
         self.symbol = symbol
         self.start_date = start_date
         self.end_date = end_date
         self.timeframe = timeframe
+        self.stoploss = stoploss
         self.initial_balance = initial_balance
-        self.stop_loss_percent = stop_loss_percent
         # self.maker_fee = maker_fee
         # self.taker_fee = taker_fee
         self.plot = plot
@@ -200,7 +234,7 @@ class BacktestView:
 
         cerebro.adddata(data)
         cerebro.addstrategy(
-            MyStrategy, stop_loss_percent=self.stop_loss_percent, FearGreedDf=self.FearGreedDf)
+            MyStrategy, stoploss=self.stoploss, FearGreedDf=self.FearGreedDf)
 
         # Set the commission (fees)
         cerebro.broker.setcommission(
@@ -216,7 +250,10 @@ class BacktestView:
 
         print('Ending Portfolio Value: %.2f' % cerebro.broker.getvalue())
         if self.plot == True:
-            cerebro.plot(style='candlestick', volume=False)
+            colors = ['g' if close_price >= open_price else 'r' for open_price,
+                      close_price in zip(data.open, data.close)]
+            cerebro.plot(style='candlestick', volume=False,
+                         plotkwargs=dict(candleColors=colors))
 
             plt.savefig('backtest_plot.png')
             plt.show()
@@ -230,3 +267,68 @@ class BacktestView:
 
         return result
         # return 'Backtest completed successfully'
+
+    # ==================================================================
+    # stop loss test for 15m
+
+        # start_date = '2023-10-25'
+        # end_date = '2024-02-15'
+        # balance 110
+        # frame     15m
+        # coins     20
+        # best atr factor is 10
+        # fixed and serial coins
+
+    # stop loss test for 30m
+
+        # start_date = '2023-10-25'
+        # end_date = '2024-02-15'
+        # balance 110
+        # frame     30m
+        # coins     30
+        # fixed and serial coins
+        # best atr factor 4
+
+        # stop loss test for 1h
+
+        # start_date = '2023-10-25'
+        # end_date = '2024-02-15'
+        # balance 110
+        # frame     1h
+        # coins     60
+        # fixed and serial coins
+        # best atr factor 12
+
+# ===============================================================================
+
+    # test for 1m,3m,5m failed
+
+     # test 1
+    # fear greed index > 65
+    # start_date = '2023-10-25'
+    # end_date = '2024-02-15'
+    # balance 110
+    # stop loss calced with atr muliplier 10
+    # frame     15m
+    # coins     30
+       # avg=451.2
+
+     # test 2
+    # fear greed index > 65
+    # start_date = '2023-10-25'
+    # end_date = '2024-02-15'
+    # balance 110
+    # best atr muliplier 4
+    # frame     30m
+    # coins     30
+       # avg=242
+    
+     # test 3
+    # fear greed index > 65
+    # start_date = '2023-10-25'
+    # end_date = '2024-02-15'
+    # balance 110
+    # best atr muliplier 12
+    # frame     1h
+    # coins     30
+       # avg=266
