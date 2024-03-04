@@ -268,6 +268,27 @@ class BacktestView:
         # return 'Backtest completed successfully'
 
 # ===============================================================================
+    # stop loss test
+     # fear greed index > 65
+    # start_date = '2023-10-25'
+    # end_date = '2024-02-15'
+    # balance 110
+    # random 30 coin
+    # time frame 30m
+    # 7 tries avg
+    # atr factor 4 avg profit =252
+    # atr factor 6 avg profit =332
+    # atr factor 8 avg profit =466
+    # atr factor 10 avg profit =353
+    # atr factor 12 avg profit =250
+
+    # time frame 15m
+    # 3 tries avg
+    # atr factor 4 avg profit =348 - ( 292 5 tries)
+    # atr factor 6 avg profit =315
+    # atr factor 8 avg profit =374 - ( 501 5 tries)
+    # atr factor 10 avg profit =227
+ # ========================================================================================
 
     #   bband 20
      # test 1

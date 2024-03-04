@@ -31,7 +31,7 @@ class Command(BaseCommand):
         # Change it according to your requirements
         # symbols = ['APE/USDT', 'SOL/USDT', 'DOT/USDT', 'MOVR/USDT']
         symbols = Coin.objects.exclude(
-            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT'])[:30]
+            symbol__in=['MKRUSDT', 'TUSDUSDT', 'USDCUSDT', 'WBTCUSDT', 'YFIUSDT', 'BNBUSDT', 'ETHUSDT', 'BTCUSDT']).order_by('?')[:30]
 
         # symbols = Coin.objects.filter(symbol__in=['XECUSDT', 'OAXUSDT', 'ATMUSDT', 'OOKIUSDT', 'DREPUSDT', 'LPTUSDT', 'APEUSDT', 'SOLUSDT', 'DOTUSDT', 'MOVRUSDT',
         #                                          'XRPUSDT', 'LINKUSDT', 'ADAUSDT', 'DOGEUSDT', 'XLMUSDT'])
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         profit_history = False
 
         start_date = '2023-10-25'
-        end_date = '2023-10-27'
+        end_date = '2023-11-10'
 
         # start_date = '2023-03-19'
         # end_date = '2023-05-09'
