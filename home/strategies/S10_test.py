@@ -289,17 +289,3 @@ class BacktestView:
     # atr factor 8 avg profit =374 - ( 501 5 tries)
     # atr factor 10 avg profit =227
  # ========================================================================================
-
-    #   bband 20
-     # test 1
-    # fear greed index > 65
-    # start_date = '2023-10-25'
-    # end_date = '2024-02-15'
-    # balance 110
-    # stop loss calced with atr muliplier 12
-    # frame     30m
-    # coins     60
-    # profit1   597     983     5144    3789    884     2423    997     5091    1483    918
-    # profit2   839     1137    1919    1220    1387    1111    3595    3656    424     1473
-    # profit3   1159    1404    510     2329    2623    1065    1655    1218    1311    2211
-        #   avg=1818.5

@@ -6,7 +6,7 @@ import os
 from home.indicators.Ema import Ema
 
 
-class S10:
+class S12:
     def __init__(self, exchange, symbol, time_frame, order_type):
         self.exchange = exchange
         self.symbol = symbol
